@@ -6,7 +6,7 @@ import os
 from mcp.server.fastmcp import FastMCP
 from pydantic import ValidationError
 
-from .data_model import DataModel, Node, Relationship, Property
+from .data_model import DataModel, Node, Relationship, Property, _generate_relationship_pattern
 
 
 logger = logging.getLogger("mcp_neo4j_data_modeling")
@@ -50,7 +50,7 @@ def create_mcp_server() -> FastMCP:
     @mcp.tool()
     def add_relationship_properties(relationship_type: str, start_node_label: str, end_node_label: str, properties: list[Property], data_model: DataModel) -> DataModel:
         "Add a new property to the relationship, if it doesn't already exist. Returns the updated data model as a JSON string."
-        pattern = f"(:{start_node_label})-[:{relationship_type}]->(:{end_node_label})"
+        pattern = _generate_relationship_pattern(start_node_label, relationship_type, end_node_label)
         for relationship in data_model.relationships:
             if relationship.pattern() == pattern:
                 for prop in properties:
@@ -83,7 +83,7 @@ def create_mcp_server() -> FastMCP:
     @mcp.tool()
     def remove_relationship_property(relationship_type: str, start_node_label: str, end_node_label: str, property_name: str, data_model: DataModel) -> DataModel:
         "Remove a property from the relationship, if it exists. Returns the updated data model as a JSON string."
-        pattern = f"(:{start_node_label})-[:{relationship_type}]->(:{end_node_label})"    
+        pattern = _generate_relationship_pattern(start_node_label, relationship_type, end_node_label)
         for relationship in data_model.relationships:
             if relationship.pattern() == pattern:
                 relationship.remove_property(property_name)

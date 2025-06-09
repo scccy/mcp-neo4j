@@ -1,6 +1,11 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from collections import Counter
 import neo4j_viz as nvl
+
+
+def _generate_relationship_pattern(start_node_label: str, relationship_type: str, end_node_label: str) -> str:
+    "Generate a pattern for a relationship."
+    return f"(:{start_node_label})-[:{relationship_type}]->(:{end_node_label})"
 
 class PropertySource(BaseModel):
     "The source of a property."
@@ -20,6 +25,17 @@ class Node(BaseModel):
     key_property: Property = Field(description="The key property of the node")
     properties: list[Property] = Field(description="The properties of the node")
 
+    @field_validator("properties")
+    def validate_properties(cls, properties: list[Property], info: ValidationInfo) -> list[Property]:
+        "Validate the properties."
+        properties = [p for p in properties if p.name != info.data["key_property"].name]
+
+        counts = Counter([p.name for p in properties])
+        for name, count in counts.items():
+            if count > 1:
+                raise ValueError(f"Property {name} appears {count} times in node {info.data['label']}")
+        return properties
+    
     def add_property(self, prop: Property) -> None:
         "Add a new property to the node."
         if prop.name in [p.name for p in self.properties]:
@@ -52,6 +68,18 @@ class Relationship(BaseModel):
     key_property: Property | None = Field(default=None, description="The key property of the relationship, if any.")
     properties: list[Property] = Field(default_factory=list, description="The properties of the relationship")
 
+    @field_validator("properties")
+    def validate_properties(cls, properties: list[Property], info: ValidationInfo) -> list[Property]:
+        "Validate the properties."
+        if info.data.get("key_property"):
+            properties = [p for p in properties if p.name != info.data["key_property"].name]
+
+        counts = Counter([p.name for p in properties])
+        for name, count in counts.items():
+            if count > 1:
+                raise ValueError(f"Property {name} appears {count} times in relationship {_generate_relationship_pattern(info.data['start_node_label'], info.data['type'], info.data['end_node_label'])}")
+        return properties
+
     def add_property(self, prop: Property) -> None:
         "Add a new property to the relationship."
         if prop.name in [p.name for p in self.properties]:
@@ -67,7 +95,7 @@ class Relationship(BaseModel):
     
     def pattern(self) -> str:
         "Return the pattern of the relationship."
-        return f"{self.start_node_label} -[:{self.type}]-> {self.end_node_label}"
+        return _generate_relationship_pattern(self.start_node_label, self.type, self.end_node_label)
     
     @property
     def all_properties_dict(self) -> dict[str, str]:
@@ -86,6 +114,26 @@ class DataModel(BaseModel):
     nodes: list[Node] = Field(default_factory=list, description="The nodes of the data model")
     relationships: list[Relationship] = Field(default_factory=list, description="The relationships of the data model")
 
+    @field_validator("nodes")
+    def validate_nodes(cls, nodes: list[Node]) -> list[Node]:
+        "Validate the nodes."
+
+        counts = Counter([n.label for n in nodes])
+        for label, count in counts.items():
+            if count > 1:
+                raise ValueError(f"Node with label {label} appears {count} times in data model")
+        return nodes
+    
+    @field_validator("relationships")
+    def validate_relationships(cls, relationships: list[Relationship]) -> list[Relationship]:
+        "Validate the relationships."
+
+        counts = Counter([r.pattern() for r in relationships])
+        for pattern, count in counts.items():
+            if count > 1:
+                raise ValueError(f"Relationship with pattern {pattern} appears {count} times in data model")
+        return relationships
+    
     def add_node(self, node: Node) -> None:
         "Add a new node to the data model."
         if node.label in [n.label for n in self.nodes]:
@@ -107,7 +155,7 @@ class DataModel(BaseModel):
     
     def remove_relationship(self, relationship_type: str, relationship_start_node_label: str, relationship_end_node_label: str) -> None:
         "Remove a relationship from the data model."
-        pattern = f"(:{relationship_start_node_label})-[:{relationship_type}]->(:{relationship_end_node_label})"
+        pattern = _generate_relationship_pattern(relationship_start_node_label, relationship_type, relationship_end_node_label)
         try:
             [self.relationships.remove(x) for x in self.relationships if x.pattern() == pattern]
         except ValueError:
@@ -116,24 +164,6 @@ class DataModel(BaseModel):
     def to_nvl(self) -> nvl.VisualizationGraph:
         return nvl.VisualizationGraph(nodes=[n.to_nvl() for n in self.nodes], relationships=[r.to_nvl() for r in self.relationships])
 
-    @field_validator("nodes")
-    def validate_nodes(cls, nodes: list[Node]) -> list[Node]:
-        "Validate the nodes."
-
-        counts = Counter([n.label for n in nodes])
-        for label, count in counts.items():
-            if count > 1:
-                raise ValueError(f"Node with label {label} appears {count} times in data model")
-        return nodes
     
-    @field_validator("relationships")
-    def validate_relationships(cls, relationships: list[Relationship]) -> list[Relationship]:
-        "Validate the relationships."
-
-        counts = Counter([r.pattern() for r in relationships])
-        for pattern, count in counts.items():
-            if count > 1:
-                raise ValueError(f"Relationship with pattern {pattern} appears {count} times in data model")
-        return relationships
     
 
