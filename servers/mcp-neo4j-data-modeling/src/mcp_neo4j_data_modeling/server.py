@@ -140,6 +140,11 @@ def create_mcp_server() -> FastMCP:
             webbrowser.open_new_tab(file_url)
 
         open_html_in_browser(dm_validated.to_nvl().render().data)
+
+    @mcp.tool()
+    def load_from_arrows_json(arrows_data_model_dict: dict[str, Any]) -> DataModel:
+        "Load a data model from the Arrows web application format. Returns a data model as a JSON string."
+        return DataModel.from_arrows(arrows_data_model_dict)
         
     return mcp
 

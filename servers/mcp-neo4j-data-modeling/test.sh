@@ -1,1 +1,1 @@
-uv run pytest tests/integration -s 
+uv run pytest tests/ -s 

@@ -1,7 +1,8 @@
 import pytest
 from pydantic import ValidationError
+from typing import Any
 
-from mcp_neo4j_data_modeling.data_model import DataModel, Node, Relationship, Property, PropertySource
+from mcp_neo4j_data_modeling.data_model import DataModel, Node, Relationship, Property
 
 
 def test_node_add_property_new():
@@ -194,12 +195,16 @@ def test_data_model_validate_nodes_invalid_dupe_labels():
 
 def test_data_model_validate_relationships_valid():
     """Test data model validation with valid relationships."""
+    nodes = [
+        Node(label="Person", key_property=Property(name="id", type="STRING", description="Unique identifier"), properties=[]),
+        Node(label="Company", key_property=Property(name="id", type="STRING", description="Unique identifier"), properties=[])
+    ]
     relationships = [
         Relationship(type="KNOWS", start_node_label="Person", end_node_label="Person", properties=[]),
         Relationship(type="WORKS_FOR", start_node_label="Person", end_node_label="Company", properties=[])
     ]
     
-    data_model = DataModel(nodes=[], relationships=relationships)
+    data_model = DataModel(nodes=nodes, relationships=relationships)
     
     # Should not raise an exception
     assert len(data_model.relationships) == 2
@@ -213,3 +218,57 @@ def test_data_model_validate_relationships_invalid_dupe_patterns():
     ]
     with pytest.raises(ValidationError, match=r"Relationship with pattern \(:Person\)-\[:KNOWS\]->\(:Person\) appears 2 times in data model"):
         DataModel(nodes=[], relationships=relationships)
+
+def test_data_model_validate_relationships_invalid_start_node_does_not_exist():
+    """Test data model validation with a start node that does not exist."""
+    nodes = [Node(
+        label="Pet",
+        key_property=Property(name="id", type="string", description="Unique identifier"),
+    ),
+    Node(
+        label="Place",
+        key_property=Property(name="id", type="string", description="Unique identifier"),
+    )
+    ]
+    relationships = [
+        Relationship(type="KNOWS", start_node_label="Person", end_node_label="Pet", properties=[])
+    ]
+    with pytest.raises(ValidationError, match=r"Relationship \(:Person\)-\[:KNOWS\]->\(:Pet\) has a start node that does not exist in data model"):
+        DataModel(nodes=[], relationships=relationships)
+
+def test_data_model_validate_relationships_invalid_end_node_does_not_exist():
+    """Test data model validation with an end node that does not exist."""
+    nodes = [Node(
+        label="Person",
+        key_property=Property(name="id", type="string", description="Unique identifier"),
+    ),
+    Node(
+        label="Place",
+        key_property=Property(name="id", type="string", description="Unique identifier"),
+    )
+    ]
+
+
+    relationships = [
+        Relationship(type="KNOWS", start_node_label="Person", end_node_label="Pet", properties=[])
+    ]
+    with pytest.raises(ValidationError, match=r"Relationship \(:Person\)-\[:KNOWS\]->\(:Pet\) has an end node that does not exist in data model"):
+        DataModel(nodes=nodes, relationships=relationships)
+
+def test_data_model_from_arrows(arrows_data_model_dict: dict[str, Any]):
+    """Test converting an Arrows Data Model to a Data Model."""
+    data_model = DataModel.from_arrows(arrows_data_model_dict)
+    assert len(data_model.nodes) == 4
+    assert len(data_model.relationships) == 4
+    assert data_model.nodes[0].label == "Person"
+    assert data_model.nodes[0].key_property.name == "name"
+    assert data_model.nodes[0].key_property.type == "STRING"
+    assert len(data_model.nodes[0].properties) == 1
+    assert data_model.nodes[0].properties[0].name == "age"
+    assert data_model.nodes[0].properties[0].type == "INTEGER"
+    assert data_model.nodes[0].properties[0].description is None
+    assert data_model.nodes[1].label == "Address"
+    assert data_model.nodes[1].key_property.name == "fullAddress"
+    assert data_model.nodes[1].key_property.type == "STRING"
+    assert {"Person", "Address", "Pet", "Toy"} == {n.label for n in data_model.nodes}
+    assert {"KNOWS", "HAS_ADDRESS", "HAS_PET", "PLAYS_WITH"} == {r.type for r in data_model.relationships}
