@@ -52,7 +52,7 @@ def create_mcp_server() -> FastMCP:
         "Add a new property to the relationship, if it doesn't already exist. Returns the updated data model as a JSON string."
         pattern = _generate_relationship_pattern(start_node_label, relationship_type, end_node_label)
         for relationship in data_model.relationships:
-            if relationship.pattern() == pattern:
+            if relationship.pattern == pattern:
                 for prop in properties:
                     if prop.name not in [p.name for p in relationship.properties]:
                         relationship.add_property(prop)
@@ -85,7 +85,7 @@ def create_mcp_server() -> FastMCP:
         "Remove a property from the relationship, if it exists. Returns the updated data model as a JSON string."
         pattern = _generate_relationship_pattern(start_node_label, relationship_type, end_node_label)
         for relationship in data_model.relationships:
-            if relationship.pattern() == pattern:
+            if relationship.pattern == pattern:
                 relationship.remove_property(property_name)
                 return data_model
         raise ValueError(f"Relationship with type {relationship_type} not found in data model")

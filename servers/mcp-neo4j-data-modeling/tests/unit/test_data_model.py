@@ -135,7 +135,7 @@ def test_generate_relationship_pattern():
     )
     
     expected_pattern = "(:Person)-[:KNOWS]->(:Person)"
-    assert relationship.pattern() == expected_pattern
+    assert relationship.pattern == expected_pattern
 
 
 def test_relationship_validate_properties_key_prop_in_properties_list():

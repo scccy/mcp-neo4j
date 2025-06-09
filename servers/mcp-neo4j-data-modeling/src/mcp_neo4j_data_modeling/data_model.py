@@ -4,7 +4,7 @@ import neo4j_viz as nvl
 
 
 def _generate_relationship_pattern(start_node_label: str, relationship_type: str, end_node_label: str) -> str:
-    "Generate a pattern for a relationship."
+    "Helper function to generate a pattern for a relationship."
     return f"(:{start_node_label})-[:{relationship_type}]->(:{end_node_label})"
 
 class PropertySource(BaseModel):
@@ -83,7 +83,7 @@ class Relationship(BaseModel):
     def add_property(self, prop: Property) -> None:
         "Add a new property to the relationship."
         if prop.name in [p.name for p in self.properties]:
-            raise ValueError(f"Property {prop.name} already exists in relationship {self.type}")
+            raise ValueError(f"Property {prop.name} already exists in relationship {self.pattern}")
         self.properties.append(prop)
 
     def remove_property(self, prop: Property) -> None:
@@ -93,6 +93,7 @@ class Relationship(BaseModel):
         except ValueError:
             pass
     
+    @property
     def pattern(self) -> str:
         "Return the pattern of the relationship."
         return _generate_relationship_pattern(self.start_node_label, self.type, self.end_node_label)
@@ -128,7 +129,7 @@ class DataModel(BaseModel):
     def validate_relationships(cls, relationships: list[Relationship]) -> list[Relationship]:
         "Validate the relationships."
 
-        counts = Counter([r.pattern() for r in relationships])
+        counts = Counter([r.pattern for r in relationships])
         for pattern, count in counts.items():
             if count > 1:
                 raise ValueError(f"Relationship with pattern {pattern} appears {count} times in data model")
@@ -142,8 +143,8 @@ class DataModel(BaseModel):
 
     def add_relationship(self, relationship: Relationship) -> None:
         "Add a new relationship to the data model."
-        if relationship.pattern() in [r.pattern() for r in self.relationships]:
-            raise ValueError(f"Relationship {relationship.pattern()} already exists in data model")
+        if relationship.pattern in [r.pattern for r in self.relationships]:
+            raise ValueError(f"Relationship {relationship.pattern} already exists in data model")
         self.relationships.append(relationship)
 
     def remove_node(self, node_label: str) -> None:
@@ -157,7 +158,7 @@ class DataModel(BaseModel):
         "Remove a relationship from the data model."
         pattern = _generate_relationship_pattern(relationship_start_node_label, relationship_type, relationship_end_node_label)
         try:
-            [self.relationships.remove(x) for x in self.relationships if x.pattern() == pattern]
+            [self.relationships.remove(x) for x in self.relationships if x.pattern == pattern]
         except ValueError:
             pass
     
