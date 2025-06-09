@@ -45,3 +45,4 @@ Thumbs.db
 .nx/cache
 .nx/workspace-data
 __pycache__
+servers/mcp-neo4j-data-modeling/test.ipynb
