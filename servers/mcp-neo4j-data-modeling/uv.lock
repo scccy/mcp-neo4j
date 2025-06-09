@@ -538,7 +538,6 @@ name = "mcp-neo4j-data-modeling"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "ipykernel" },
     { name = "mcp", extra = ["cli"] },
     { name = "neo4j" },
     { name = "neo4j-viz" },
@@ -547,6 +546,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "ipykernel" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -556,7 +556,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.6.0" },
     { name = "neo4j", specifier = ">=5.26.0" },
     { name = "neo4j-viz", specifier = ">=0.3.1" },
@@ -565,6 +564,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "pyright", specifier = ">=1.1.389" },
     { name = "pytest", specifier = ">=7.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.20.3" },
