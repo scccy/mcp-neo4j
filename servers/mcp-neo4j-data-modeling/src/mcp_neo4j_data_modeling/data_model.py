@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from collections import Counter
 import neo4j_viz as nvl
 from typing import Any
+import json
 
 def _generate_relationship_pattern(start_node_label: str, relationship_type: str, end_node_label: str) -> str:
     "Helper function to generate a pattern for a relationship."
@@ -48,14 +49,23 @@ class Property(BaseModel):
                 description=description,
         )
 
-    def to_arrows(self) -> dict[str, Any]:
-        ...
+    def to_arrows(self, is_key: bool = False) -> dict[str, Any]:
+        "Convert a Property to an Arrows property dictionary. Final JSON string formatting is done at the data model level."
+        value = f"{self.type}"
+        if self.description:
+            value += f" | {self.description}"
+        if is_key:
+            value += " | KEY"
+        return {
+            self.name: value,
+        }
 
 class Node(BaseModel):
     "A Neo4j Node."
     label: str = Field(description="The label of the node. Should be in PascalCase.")
     key_property: Property = Field(description="The key property of the node")
     properties: list[Property] = Field(default_factory=list, description="The properties of the node")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="The metadata of the node. This should only be used when converting data models.")
 
     @field_validator("properties")
     def validate_properties(cls, properties: list[Property], info: ValidationInfo) -> list[Property]:
@@ -99,11 +109,26 @@ class Node(BaseModel):
         props = [Property.from_arrows({k: v}) for k, v in arrows_node_dict["properties"].items() if "KEY" not in v.upper()]
         keys = [{k: v} for k, v in arrows_node_dict["properties"].items() if "KEY" in v.upper()]
         key_prop = Property.from_arrows(keys[0]) if keys else None
-        return cls(label=arrows_node_dict["labels"][0], key_property=key_prop, properties=props)
+        metadata = {
+            "position": arrows_node_dict["position"],
+            "caption": arrows_node_dict["caption"],
+            "style": arrows_node_dict["style"],
+        }
+        return cls(label=arrows_node_dict["labels"][0], key_property=key_prop, properties=props, metadata=metadata)
     
-    def to_arrows(self) -> dict[str, Any]:
-        "Convert a Node to an Arrows Node."
-        ...
+    def to_arrows(self, default_position: dict[str, float] = {"x": 0.0, "y": 0.0}) -> dict[str, Any]:
+        "Convert a Node to an Arrows Node dictionary. Final JSON string formatting is done at the data model level."
+        props = dict()
+        [props.update(p.to_arrows(is_key=False)) for p in self.properties]
+        props.update(self.key_property.to_arrows(is_key=True))
+        return {
+            "id": self.label,
+            "labels": [self.label],
+            "properties": props,
+            "style": self.metadata.get("style", {}),
+            "position": self.metadata.get("position", default_position),
+            "caption": self.metadata.get("caption", ""),
+        }
 
 class Relationship(BaseModel):
     "A Neo4j Relationship."
@@ -111,7 +136,8 @@ class Relationship(BaseModel):
     start_node_label: str = Field(description="The label of the start node")
     end_node_label: str = Field(description="The label of the end node")
     key_property: Property | None = Field(default=None, description="The key property of the relationship, if any.")
-    properties: list[Property] = Field(default_factory=list, description="The properties of the relationship")
+    properties: list[Property] = Field(default_factory=list, description="The properties of the relationship, if any.")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="The metadata of the relationship. This should only be used when converting data models.")
 
     @field_validator("properties")
     def validate_properties(cls, properties: list[Property], info: ValidationInfo) -> list[Property]:
@@ -162,16 +188,30 @@ class Relationship(BaseModel):
         props = [Property.from_arrows({k: v}) for k, v in arrows_relationship_dict["properties"].items() if "KEY" not in v.upper()]
         keys = [{k: v} for k, v in arrows_relationship_dict["properties"].items() if "KEY" in v.upper()]
         key_prop = Property.from_arrows(keys[0]) if keys else None
-        return cls(type=arrows_relationship_dict["type"], start_node_label=node_id_to_label_map[arrows_relationship_dict["fromId"]], end_node_label=node_id_to_label_map[arrows_relationship_dict["toId"]], key_property=key_prop, properties=props)
+        metadata = {
+            "style": arrows_relationship_dict["style"],
+        }
+        return cls(type=arrows_relationship_dict["type"], start_node_label=node_id_to_label_map[arrows_relationship_dict["fromId"]], end_node_label=node_id_to_label_map[arrows_relationship_dict["toId"]], key_property=key_prop, properties=props, metadata=metadata)
     
     def to_arrows(self) -> dict[str, Any]:
-        "Convert a Relationship to an Arrows Relationship."
-        ...
+        "Convert a Relationship to an Arrows Relationship dictionary. Final JSON string formatting is done at the data model level."
+        props = dict()
+        [props.update(p.to_arrows(is_key=False)) for p in self.properties]
+        if self.key_property:
+            props.update(self.key_property.to_arrows(is_key=True))
+        return {
+            "fromId": self.start_node_label,
+            "toId": self.end_node_label,
+            "type": self.type,
+            "properties": props,
+            "style": self.metadata.get("style", {}),
+        }
 
 class DataModel(BaseModel):
     "A Neo4j Graph Data Model."
     nodes: list[Node] = Field(default_factory=list, description="The nodes of the data model")
     relationships: list[Relationship] = Field(default_factory=list, description="The relationships of the data model")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="The metadata of the data model. This should only be used when converting data models.")
 
     @field_validator("nodes")
     def validate_nodes(cls, nodes: list[Node]) -> list[Node]:
@@ -239,11 +279,35 @@ class DataModel(BaseModel):
         nodes = [Node.from_arrows(n) for n in arrows_data_model_dict["nodes"]]
         node_id_to_label_map = {n["id"]: n["labels"][0] for n in arrows_data_model_dict["nodes"]}
         relationships = [Relationship.from_arrows(r, node_id_to_label_map) for r in arrows_data_model_dict["relationships"]]
-        return cls(nodes=nodes, relationships=relationships)
+        metadata = {
+            "style": arrows_data_model_dict["style"],
+        }
+        return cls(nodes=nodes, relationships=relationships, metadata=metadata)
     
-    def to_arrows(self) -> dict[str, Any]:
-        ...
+    def to_arrows_dict(self) -> dict[str, Any]:
+        "Convert the data model to an Arrows Data Model Python dictionary."
+        node_spacing: int = 200
+        y_current = 0
+        arrows_nodes = []
+        for idx, n in enumerate(self.nodes):
+            if (idx + 1) % 5 == 0:
+                y_current -= 200
+            arrows_nodes.append(
+                n.to_arrows(default_position={"x": node_spacing * (idx % 5), "y": y_current})
+            )
+        arrows_relationships = [r.to_arrows() for r in self.relationships]
+        return {
+            "nodes": arrows_nodes,
+            "relationships": arrows_relationships,
+            "style": self.metadata.get("style", {}),
+        }
+    
+    def to_arrows_json_str(self) -> str:
+        "Convert the data model to an Arrows Data Model JSON string."
+        return json.dumps(self.to_arrows_dict(), indent=2)
 
+    
+    
     
     
 

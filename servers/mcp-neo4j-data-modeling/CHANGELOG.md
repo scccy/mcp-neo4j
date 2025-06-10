@@ -9,5 +9,6 @@
 
 ## v0.1.0
 
-* Basic functionality (add and remove nodes, relationships and properties)
+* Basic functionality - Expose schemas for Data Model, Node, Relationship and Property
 * Visualize data model in interactive browser window   
+* Import / Export from Arrows web application

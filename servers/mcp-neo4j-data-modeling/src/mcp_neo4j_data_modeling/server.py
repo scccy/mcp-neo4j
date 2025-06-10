@@ -21,78 +21,30 @@ def create_mcp_server() -> FastMCP:
     def init() -> DataModel:
         """Create an empty data model."""
         return DataModel(nodes=[], relationships=[])
-
-    @mcp.tool()
-    def add_nodes(nodes: list[Node], data_model: DataModel) -> DataModel:
-        "Add a new node to the data model, if it doesn't already exist. Returns the updated data model as a JSON string."
-        for node in nodes:
-            data_model.add_node(node)
-        return data_model
-
-    @mcp.tool()
-    def add_relationships(relationships: list[Relationship], data_model: DataModel) -> DataModel:
-        "Add a new relationship to the data model, if it doesn't already exist. The relationship must have a start and end node that exist in the data model. Returns the updated data model as a JSON string."
-        for relationship in relationships:
-            data_model.add_relationship(relationship)
-        return data_model
-
-    @mcp.tool()
-    def add_node_properties(node_label: str, properties: list[Property], data_model: DataModel) -> DataModel:
-        "Add new properties to the node, if they doesn't already exist. Returns the updated data model as a JSON string."
-        for node in data_model.nodes:
-            if node.label == node_label:
-                for prop in properties:
-                    if prop.name not in [p.name for p in node.properties]:
-                        node.add_property(prop)
-                return data_model
-        raise ValueError(f"Node with label {node_label} not found in data model")
-
-    @mcp.tool()
-    def add_relationship_properties(relationship_type: str, start_node_label: str, end_node_label: str, properties: list[Property], data_model: DataModel) -> DataModel:
-        "Add a new property to the relationship, if it doesn't already exist. Returns the updated data model as a JSON string."
-        pattern = _generate_relationship_pattern(start_node_label, relationship_type, end_node_label)
-        for relationship in data_model.relationships:
-            if relationship.pattern == pattern:
-                for prop in properties:
-                    if prop.name not in [p.name for p in relationship.properties]:
-                        relationship.add_property(prop)
-                return data_model
-        raise ValueError(f"Relationship with pattern {pattern} not found in data model")
-
-    @mcp.tool()
-    def remove_node(node_label: str, data_model: DataModel) -> DataModel:
-        "Remove a node from the data model, if it exists. Returns the updated data model as a JSON string."
-        data_model.remove_node(node_label)
-        return data_model
-
-    @mcp.tool()
-    def remove_relationship(relationship_type: str, start_node_label: str, end_node_label: str, data_model: DataModel) -> DataModel:
-        "Remove a relationship from the data model, if it exists. Returns the updated data model as a JSON string."
-        data_model.remove_relationship(relationship_type, start_node_label, end_node_label)
-        return data_model
-
-    @mcp.tool()
-    def remove_node_property(node_label: str, property_name: str, data_model: DataModel) -> DataModel:
-        "Remove a property from the node, if it exists. Returns the updated data model as a JSON string."
-        for node in data_model.nodes:
-            if node.label == node_label:
-                node.remove_property(property_name)
-                return data_model
-        raise ValueError(f"Node with label {node_label} not found in data model")
-
-    @mcp.tool()
-    def remove_relationship_property(relationship_type: str, start_node_label: str, end_node_label: str, property_name: str, data_model: DataModel) -> DataModel:
-        "Remove a property from the relationship, if it exists. Returns the updated data model as a JSON string."
-        pattern = _generate_relationship_pattern(start_node_label, relationship_type, end_node_label)
-        for relationship in data_model.relationships:
-            if relationship.pattern == pattern:
-                relationship.remove_property(property_name)
-                return data_model
-        raise ValueError(f"Relationship with type {relationship_type} not found in data model")
+    
+    @mcp.resource("resource://schema/node")
+    def node_schema() -> dict[str, Any]:
+        """Get the schema for a node."""
+        return Node.model_json_schema()
+    
+    @mcp.resource("resource://schema/relationship")
+    def relationship_schema() -> dict[str, Any]:
+        """Get the schema for a relationship."""
+        return Relationship.model_json_schema()
+    
+    @mcp.resource("resource://schema/property")
+    def property_schema() -> dict[str, Any]:
+        """Get the schema for a property."""
+        return Property.model_json_schema()
+    
+    @mcp.resource("resource://schema/data_model")
+    def data_model_schema() -> dict[str, Any]:
+        """Get the schema for a data model."""
+        return DataModel.model_json_schema()
 
     @mcp.tool()
     def validate_node(node: Node) -> bool:
-        "Validate a single node. Returns True if the node is valid, False otherwise."
+        "Validate a single node. Returns True if the node is valid, otherwise raises a ValueError."
         try:
             Node.model_validate(node, strict=True)
         except ValidationError as e:
@@ -101,7 +53,7 @@ def create_mcp_server() -> FastMCP:
 
     @mcp.tool()
     def validate_relationship(relationship: Relationship) -> bool:
-        "Validate a single relationship. Returns True if the relationship is valid, False otherwise."
+        "Validate a single relationship. Returns True if the relationship is valid, otherwise raises a ValueError."
         try:
             Relationship.model_validate(relationship, strict=True)
         except ValidationError as e:
@@ -110,7 +62,7 @@ def create_mcp_server() -> FastMCP:
     
     @mcp.tool()
     def validate_data_model(data_model: DataModel) -> bool:
-        "Validate the entire data model. Returns True if the data model is valid, False otherwise."
+        "Validate the entire data model. Returns True if the data model is valid, otherwise raises a ValueError."
         try:
             DataModel.model_validate(data_model, strict=True)
         except ValidationError as e:
@@ -145,6 +97,11 @@ def create_mcp_server() -> FastMCP:
     def load_from_arrows_json(arrows_data_model_dict: dict[str, Any]) -> DataModel:
         "Load a data model from the Arrows web application format. Returns a data model as a JSON string."
         return DataModel.from_arrows(arrows_data_model_dict)
+    
+    @mcp.tool()
+    def export_to_arrows_json(data_model: DataModel) -> str:
+        "Export the data model to the Arrows web application format. Returns a JSON string."
+        return data_model.to_arrows_json_str()
         
     return mcp
 
@@ -152,7 +109,7 @@ def create_mcp_server() -> FastMCP:
 async def main(
     transport: Literal["stdio", "sse"] = "stdio",
 ) -> None:
-    logger.info("Starting MCP Neo4j Data ModelingServer")
+    logger.info("Starting MCP Neo4j Data Modeling Server")
 
 
     mcp = create_mcp_server()

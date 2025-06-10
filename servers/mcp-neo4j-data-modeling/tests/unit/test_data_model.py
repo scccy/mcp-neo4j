@@ -1,6 +1,7 @@
 import pytest
 from pydantic import ValidationError
 from typing import Any
+import json
 
 from mcp_neo4j_data_modeling.data_model import DataModel, Node, Relationship, Property
 
@@ -234,7 +235,7 @@ def test_data_model_validate_relationships_invalid_start_node_does_not_exist():
         Relationship(type="KNOWS", start_node_label="Person", end_node_label="Pet", properties=[])
     ]
     with pytest.raises(ValidationError, match=r"Relationship \(:Person\)-\[:KNOWS\]->\(:Pet\) has a start node that does not exist in data model"):
-        DataModel(nodes=[], relationships=relationships)
+        DataModel(nodes=nodes, relationships=relationships)
 
 def test_data_model_validate_relationships_invalid_end_node_does_not_exist():
     """Test data model validation with an end node that does not exist."""
@@ -263,6 +264,11 @@ def test_data_model_from_arrows(arrows_data_model_dict: dict[str, Any]):
     assert data_model.nodes[0].label == "Person"
     assert data_model.nodes[0].key_property.name == "name"
     assert data_model.nodes[0].key_property.type == "STRING"
+    assert data_model.nodes[0].metadata == {
+        "position": {"x": 105.3711141386136, "y": -243.80584874322315},
+        "caption": "",
+        "style": {},
+    }
     assert len(data_model.nodes[0].properties) == 1
     assert data_model.nodes[0].properties[0].name == "age"
     assert data_model.nodes[0].properties[0].type == "INTEGER"
@@ -270,5 +276,101 @@ def test_data_model_from_arrows(arrows_data_model_dict: dict[str, Any]):
     assert data_model.nodes[1].label == "Address"
     assert data_model.nodes[1].key_property.name == "fullAddress"
     assert data_model.nodes[1].key_property.type == "STRING"
+    assert data_model.relationships[0].metadata == {
+        "style": {},
+    }
     assert {"Person", "Address", "Pet", "Toy"} == {n.label for n in data_model.nodes}
     assert {"KNOWS", "HAS_ADDRESS", "HAS_PET", "PLAYS_WITH"} == {r.type for r in data_model.relationships}
+    assert data_model.metadata == {"style": {
+    "font-family": "sans-serif",
+    "background-color": "#ffffff",
+    "background-image": "",
+    "background-size": "100%",
+    "node-color": "#ffffff",
+    "border-width": 4,
+    "border-color": "#000000",
+    "radius": 50,
+    "node-padding": 5,
+    "node-margin": 2,
+    "outside-position": "auto",
+    "node-icon-image": "",
+    "node-background-image": "",
+    "icon-position": "inside",
+    "icon-size": 64,
+    "caption-position": "inside",
+    "caption-max-width": 200,
+    "caption-color": "#000000",
+    "caption-font-size": 50,
+    "caption-font-weight": "normal",
+    "label-position": "inside",
+    "label-display": "pill",
+    "label-color": "#000000",
+    "label-background-color": "#ffffff",
+    "label-border-color": "#000000",
+    "label-border-width": 4,
+    "label-font-size": 40,
+    "label-padding": 5,
+    "label-margin": 4,
+    "directionality": "directed",
+    "detail-position": "inline",
+    "detail-orientation": "parallel",
+    "arrow-width": 5,
+    "arrow-color": "#000000",
+    "margin-start": 5,
+    "margin-end": 5,
+    "margin-peer": 20,
+    "attachment-start": "normal",
+    "attachment-end": "normal",
+    "relationship-icon-image": "",
+    "type-color": "#000000",
+    "type-background-color": "#ffffff",
+    "type-border-color": "#000000",
+    "type-border-width": 0,
+    "type-font-size": 16,
+    "type-padding": 5,
+    "property-position": "outside",
+    "property-alignment": "colon",
+    "property-color": "#000000",
+    "property-font-size": 16,
+        "property-font-weight": "normal"
+    }
+    }
+
+def test_data_model_to_arrows():
+    nodes = [
+        Node(label="Person", key_property=Property(name="id", type="STRING", description="Unique identifier"), properties=[Property(name="name", type="STRING", description="Name of the person")]),
+        Node(label="Company", key_property=Property(name="id2", type="STRING", description="Unique identifier 2"), properties=[])
+    ]
+    relationships = [
+        Relationship(type="KNOWS", start_node_label="Person", end_node_label="Person", properties=[]),
+        Relationship(type="WORKS_FOR", start_node_label="Person", end_node_label="Company", properties=[])
+    ]
+    
+    data_model = DataModel(nodes=nodes, relationships=relationships)
+
+    arrows_data_model_dict = data_model.to_arrows_dict()
+    assert len(arrows_data_model_dict["nodes"]) == 2
+    assert len(arrows_data_model_dict["relationships"]) == 2
+    assert arrows_data_model_dict["nodes"][0]["id"] == "Person"
+    assert arrows_data_model_dict["nodes"][0]["properties"] == {"id": "STRING | Unique identifier | KEY", "name": "STRING | Name of the person"}
+    assert arrows_data_model_dict["nodes"][0]["position"] == {"x": 0.0, "y": 0.0}
+    assert arrows_data_model_dict["nodes"][0]["caption"] == ""
+    assert arrows_data_model_dict["nodes"][0]["style"] == {}
+    assert arrows_data_model_dict["nodes"][1]["id"] == "Company"
+    assert arrows_data_model_dict["nodes"][1]["properties"] == {"id2": "STRING | Unique identifier 2 | KEY"}
+    assert arrows_data_model_dict["nodes"][1]["position"] == {"x": 200.0, "y": 0.0}
+    assert arrows_data_model_dict["nodes"][1]["caption"] == ""
+    assert arrows_data_model_dict["nodes"][1]["style"] == {}
+    assert arrows_data_model_dict["relationships"][0]["fromId"] == "Person"
+
+def test_data_model_arrows_round_trip(arrows_data_model_dict: dict[str, Any]):
+    """Test converting a Data Model to an Arrows Data Model and back."""
+    data_model = DataModel.from_arrows(arrows_data_model_dict)
+    arrows_data_model_dict_copy = json.loads(data_model.to_arrows_json_str())
+
+    assert arrows_data_model_dict_copy["nodes"][0]["properties"]["name"] == arrows_data_model_dict["nodes"][0]["properties"]["name"]
+    assert arrows_data_model_dict_copy["nodes"][0]["properties"]["name"] == arrows_data_model_dict["nodes"][0]["properties"]["name"]
+    assert arrows_data_model_dict_copy["nodes"][1]["properties"] == arrows_data_model_dict["nodes"][1]["properties"]
+    assert arrows_data_model_dict_copy["relationships"][0]["type"] == arrows_data_model_dict["relationships"][0]["type"]
+    assert arrows_data_model_dict_copy["relationships"][1]["type"] == arrows_data_model_dict["relationships"][1]["type"]
+    assert arrows_data_model_dict_copy["style"] == arrows_data_model_dict["style"]

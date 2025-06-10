@@ -69,8 +69,8 @@ def arrows_data_model_dict() -> dict[str, Any]:
         "Person"
       ],
       "properties": {
-        "name": "string | key",
-        "age": "integer"
+        "name": "STRING | KEY",
+        "age": "INTEGER"
       },
       "style": {}
     },
@@ -85,7 +85,7 @@ def arrows_data_model_dict() -> dict[str, Any]:
         "Address"
       ],
       "properties": {
-        "fullAddress": "string | key",
+        "fullAddress": "STRING | KEY",
       },
       "style": {}
     },
@@ -100,8 +100,8 @@ def arrows_data_model_dict() -> dict[str, Any]:
         "Pet"
       ],
       "properties": {
-        "name": "string | key",
-        "kind": "string"
+        "name": "STRING | KEY",
+        "kind": "STRING"
       },
       "style": {}
     },
@@ -116,8 +116,8 @@ def arrows_data_model_dict() -> dict[str, Any]:
         "Toy"
       ],
       "properties": {
-        "name": "string | key",
-        "kind": "string"
+        "name": "STRING | KEY",
+        "kind": "STRING"
       },
       "style": {}
     }
