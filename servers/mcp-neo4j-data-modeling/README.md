@@ -6,103 +6,75 @@ A Model Context Protocol (MCP) server implementation that provides tools for cre
 
 ## 🧩 Components
 
+### 📦 Resources
+
+The server provides these resources:
+
+- `resource://init`
+   - Create an empty data model to start with
+   - Returns: Empty DataModel with no nodes or relationships
+
+- `resource://schema/node`
+   - Get the JSON schema for a Node object
+   - Returns: JSON schema defining the structure of a Node
+
+- `resource://schema/relationship`
+   - Get the JSON schema for a Relationship object
+   - Returns: JSON schema defining the structure of a Relationship
+
+- `resource://schema/property`
+   - Get the JSON schema for a Property object
+   - Returns: JSON schema defining the structure of a Property
+
+- `resource://schema/data_model`
+   - Get the JSON schema for a DataModel object
+   - Returns: JSON schema defining the structure of a DataModel
+
 ### 🛠️ Tools
 
 The server offers these core tools:
 
-#### 📊 Data Model Creation Tools
-- `add_nodes`
-   - Add new nodes to the data model
-   - Input: 
-     - `nodes` (list of Node objects): The nodes to add
-     - `data_model` (DataModel): Current data model
-   - Returns: Updated data model
-
-- `add_relationships`
-   - Add new relationships to the data model
-   - Input:
-     - `relationships` (list of Relationship objects): The relationships to add
-     - `data_model` (DataModel): Current data model
-   - Returns: Updated data model
-
-- `add_node_properties`
-   - Add properties to a specific node type
-   - Input:
-     - `node_label` (string): The label of the node to modify
-     - `properties` (list of Property objects): Properties to add
-     - `data_model` (DataModel): Current data model
-   - Returns: Updated data model
-
-- `add_relationship_properties`
-   - Add properties to a specific relationship type
-   - Input:
-     - `relationship_type` (string): Type of relationship
-     - `start_node_label` (string): Label of start node
-     - `end_node_label` (string): Label of end node
-     - `properties` (list of Property objects): Properties to add
-     - `data_model` (DataModel): Current data model
-   - Returns: Updated data model
-
-#### 🗑️ Data Model Modification Tools
-- `remove_node`
-   - Remove a node from the data model
-   - Input:
-     - `node_label` (string): The label of the node to remove
-     - `data_model` (DataModel): Current data model
-   - Returns: Updated data model
-
-- `remove_relationship`
-   - Remove a relationship from the data model
-   - Input:
-     - `relationship_type` (string): Type of relationship
-     - `start_node_label` (string): Label of start node
-     - `end_node_label` (string): Label of end node
-     - `data_model` (DataModel): Current data model
-   - Returns: Updated data model
-
-- `remove_node_property`
-   - Remove a property from a node
-   - Input:
-     - `node_label` (string): The label of the node
-     - `property_name` (string): Name of property to remove
-     - `data_model` (DataModel): Current data model
-   - Returns: Updated data model
-
-- `remove_relationship_property`
-   - Remove a property from a relationship
-   - Input:
-     - `relationship_type` (string): Type of relationship
-     - `start_node_label` (string): Label of start node
-     - `end_node_label` (string): Label of end node
-     - `property_name` (string): Name of property to remove
-     - `data_model` (DataModel): Current data model
-   - Returns: Updated data model
-
 #### ✅ Validation Tools
 - `validate_node`
-   - Validate a single node
+   - Validate a single node structure
    - Input:
      - `node` (Node): The node to validate
-   - Returns: True if valid, error message if invalid
+   - Returns: True if valid, raises ValueError if invalid
 
 - `validate_relationship`
-   - Validate a single relationship
+   - Validate a single relationship structure
    - Input:
      - `relationship` (Relationship): The relationship to validate
-   - Returns: True if valid, error message if invalid
+   - Returns: True if valid, raises ValueError if invalid
 
 - `validate_data_model`
-   - Validate the entire data model
+   - Validate the entire data model structure
    - Input:
      - `data_model` (DataModel): The data model to validate
-   - Returns: True if valid, error message if invalid
+   - Returns: True if valid, raises ValueError if invalid
 
 #### 👁️ Visualization Tools
 - `visualize_data_model`
-   - Generate and open an interactive visualization of the data model
+   - Generate and open an interactive visualization of the data model in your browser
    - Input:
      - `data_model` (DataModel): The data model to visualize
    - Returns: None (opens browser visualization)
+
+#### 🔄 Import/Export Tools
+
+These tools provide integration with **[Arrows](https://arrows.app/)** - a graph drawing web application for creating detailed Neo4j data models with an intuitive visual interface.
+
+- `load_from_arrows_json`
+   - Load a data model from Arrows app JSON format
+   - Input:
+     - `arrows_data_model_dict` (dict): JSON dictionary from Arrows app export
+   - Returns: DataModel object
+
+- `export_to_arrows_json`
+   - Export a data model to Arrows app JSON format
+   - Input:
+     - `data_model` (DataModel): The data model to export
+   - Returns: JSON string compatible with Arrows app
 
 ## 🔧 Usage with Claude Desktop
 
