@@ -1,13 +1,18 @@
 import logging
-from typing import Any, Literal
-import webbrowser
 import os
+import webbrowser
+from typing import Any, Literal
 
 from mcp.server.fastmcp import FastMCP
 from pydantic import ValidationError
 
-from .data_model import DataModel, Node, Relationship, Property, _generate_relationship_pattern
-
+from .data_model import (
+    DataModel,
+    Node,
+    Property,
+    Relationship,
+    _generate_relationship_pattern,
+)
 
 logger = logging.getLogger("mcp_neo4j_data_modeling")
 
@@ -15,32 +20,34 @@ logger = logging.getLogger("mcp_neo4j_data_modeling")
 def create_mcp_server() -> FastMCP:
     """Create an MCP server instance for data modeling."""
 
-    mcp: FastMCP = FastMCP("mcp-neo4j-data-modeling", dependencies=["pydantic", "webbrowser"])
+    mcp: FastMCP = FastMCP(
+        "mcp-neo4j-data-modeling", dependencies=["pydantic", "webbrowser"]
+    )
 
     @mcp.resource("resource://init")
     def init() -> DataModel:
         """Create an empty data model."""
         logger.info("Creating an empty data model.")
         return DataModel(nodes=[], relationships=[])
-    
+
     @mcp.resource("resource://schema/node")
     def node_schema() -> dict[str, Any]:
         """Get the schema for a node."""
         logger.info("Getting the schema for a node.")
         return Node.model_json_schema()
-    
+
     @mcp.resource("resource://schema/relationship")
     def relationship_schema() -> dict[str, Any]:
         """Get the schema for a relationship."""
         logger.info("Getting the schema for a relationship.")
         return Relationship.model_json_schema()
-    
+
     @mcp.resource("resource://schema/property")
     def property_schema() -> dict[str, Any]:
         """Get the schema for a property."""
         logger.info("Getting the schema for a property.")
         return Property.model_json_schema()
-    
+
     @mcp.resource("resource://schema/data_model")
     def data_model_schema() -> dict[str, Any]:
         """Get the schema for a data model."""
@@ -70,7 +77,7 @@ def create_mcp_server() -> FastMCP:
             raise ValueError(f"Validation error: {e}")
         logger.info("Relationship validated successfully.")
         return True
-    
+
     @mcp.tool()
     def validate_data_model(data_model: DataModel) -> bool:
         "Validate the entire data model. Returns True if the data model is valid, otherwise raises a ValueError."
@@ -104,10 +111,12 @@ def create_mcp_server() -> FastMCP:
                 f.write(html_content)
 
             # Construct the file URL
-            file_url = 'file://' + os.path.realpath(filename)
+            file_url = "file://" + os.path.realpath(filename)
             webbrowser.open_new_tab(file_url)
 
-        logger.info("Opening an interactive graph visualization in the default web browser.")
+        logger.info(
+            "Opening an interactive graph visualization in the default web browser."
+        )
         open_html_in_browser(dm_validated.to_nvl().render().data)
 
     @mcp.tool()
@@ -115,13 +124,13 @@ def create_mcp_server() -> FastMCP:
         "Load a data model from the Arrows web application format. Returns a data model as a JSON string."
         logger.info("Loading a data model from the Arrows web application format.")
         return DataModel.from_arrows(arrows_data_model_dict)
-    
+
     @mcp.tool()
     def export_to_arrows_json(data_model: DataModel) -> str:
         "Export the data model to the Arrows web application format. Returns a JSON string."
         logger.info("Exporting the data model to the Arrows web application format.")
         return data_model.to_arrows_json_str()
-        
+
     return mcp
 
 
@@ -129,7 +138,6 @@ async def main(
     transport: Literal["stdio", "sse"] = "stdio",
 ) -> None:
     logger.info("Starting MCP Neo4j Data Modeling Server")
-
 
     mcp = create_mcp_server()
 
@@ -139,7 +147,9 @@ async def main(
         case "sse":
             await mcp.run_sse_async()
         case _:
-            raise ValueError(f"Invalid transport: {transport} | Must be either 'stdio' or 'sse'")
+            raise ValueError(
+                f"Invalid transport: {transport} | Must be either 'stdio' or 'sse'"
+            )
 
 
 if __name__ == "__main__":

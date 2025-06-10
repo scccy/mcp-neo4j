@@ -1,30 +1,50 @@
-from pydantic import BaseModel, Field, field_validator, ValidationInfo
-from collections import Counter
-import neo4j_viz as nvl
-from typing import Any
 import json
+from collections import Counter
+from typing import Any
 
-def _generate_relationship_pattern(start_node_label: str, relationship_type: str, end_node_label: str) -> str:
+import neo4j_viz as nvl
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
+
+
+def _generate_relationship_pattern(
+    start_node_label: str, relationship_type: str, end_node_label: str
+) -> str:
     "Helper function to generate a pattern for a relationship."
     return f"(:{start_node_label})-[:{relationship_type}]->(:{end_node_label})"
 
+
 class PropertySource(BaseModel):
     "The source of a property."
-    column_name: str | None = Field(default=None, description="The column name this property maps to, if known.")
-    table_name: str | None = Field(default=None, description="The name of the table this property's column is in, if known. May also be the name of a file.")
-    location: str | None = Field(default=None, description="The location of the property, if known. May be a file path, URL, etc.")
+
+    column_name: str | None = Field(
+        default=None, description="The column name this property maps to, if known."
+    )
+    table_name: str | None = Field(
+        default=None,
+        description="The name of the table this property's column is in, if known. May also be the name of a file.",
+    )
+    location: str | None = Field(
+        default=None,
+        description="The location of the property, if known. May be a file path, URL, etc.",
+    )
+
 
 class Property(BaseModel):
     "A Neo4j Property."
+
     name: str = Field(description="The name of the property. Should be in camelCase.")
     type: str = Field(default="STRING", description="The Neo4j type of the property")
-    source: PropertySource | None = Field(default=None, description="The source of the property, if known.")
-    description: str | None = Field(default=None, description="The description of the property")
+    source: PropertySource | None = Field(
+        default=None, description="The source of the property, if known."
+    )
+    description: str | None = Field(
+        default=None, description="The description of the property"
+    )
 
     @field_validator("type")
     def validate_type(cls, v: str) -> str:
         "Validate the type."
-      
+
         return v.upper()
 
     @classmethod
@@ -39,14 +59,14 @@ class Property(BaseModel):
             ]
 
             prop_type = prop_props[0]
-            description = prop_props[1] if prop_props[1].lower() != 'key' else None
+            description = prop_props[1] if prop_props[1].lower() != "key" else None
         else:
             prop_type = list(arrows_property.values())[0]
 
         return cls(
-                name=list(arrows_property.keys())[0],
-                type=prop_type,
-                description=description,
+            name=list(arrows_property.keys())[0],
+            type=prop_type,
+            description=description,
         )
 
     def to_arrows(self, is_key: bool = False) -> dict[str, Any]:
@@ -60,28 +80,41 @@ class Property(BaseModel):
             self.name: value,
         }
 
+
 class Node(BaseModel):
     "A Neo4j Node."
+
     label: str = Field(description="The label of the node. Should be in PascalCase.")
     key_property: Property = Field(description="The key property of the node")
-    properties: list[Property] = Field(default_factory=list, description="The properties of the node")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="The metadata of the node. This should only be used when converting data models.")
+    properties: list[Property] = Field(
+        default_factory=list, description="The properties of the node"
+    )
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="The metadata of the node. This should only be used when converting data models.",
+    )
 
     @field_validator("properties")
-    def validate_properties(cls, properties: list[Property], info: ValidationInfo) -> list[Property]:
+    def validate_properties(
+        cls, properties: list[Property], info: ValidationInfo
+    ) -> list[Property]:
         "Validate the properties."
         properties = [p for p in properties if p.name != info.data["key_property"].name]
 
         counts = Counter([p.name for p in properties])
         for name, count in counts.items():
             if count > 1:
-                raise ValueError(f"Property {name} appears {count} times in node {info.data['label']}")
+                raise ValueError(
+                    f"Property {name} appears {count} times in node {info.data['label']}"
+                )
         return properties
-    
+
     def add_property(self, prop: Property) -> None:
         "Add a new property to the node."
         if prop.name in [p.name for p in self.properties]:
-            raise ValueError(f"Property {prop.name} already exists in node {self.label}")
+            raise ValueError(
+                f"Property {prop.name} already exists in node {self.label}"
+            )
         self.properties.append(prop)
 
     def remove_property(self, prop: Property) -> None:
@@ -90,7 +123,7 @@ class Node(BaseModel):
             self.properties.remove(prop)
         except ValueError:
             pass
-    
+
     @property
     def all_properties_dict(self) -> dict[str, str]:
         "Return a dictionary of all properties of the node. {property_name: property_type}"
@@ -98,25 +131,46 @@ class Node(BaseModel):
         if self.key_property:
             props.update({self.key_property.name: f"{self.key_property.type} | KEY"})
         return props
-    
+
     def to_nvl(self) -> nvl.Node:
         "Convert the node to a Neo4j Visualization Graph Node."
-        return nvl.Node(id=self.label, caption=self.label, size=20, caption_size=1, properties=self.all_properties_dict)
-    
+        return nvl.Node(
+            id=self.label,
+            caption=self.label,
+            size=20,
+            caption_size=1,
+            properties=self.all_properties_dict,
+        )
+
     @classmethod
     def from_arrows(cls, arrows_node_dict: dict[str, Any]) -> "Node":
         "Convert an Arrows Node to a Node."
-        props = [Property.from_arrows({k: v}) for k, v in arrows_node_dict["properties"].items() if "KEY" not in v.upper()]
-        keys = [{k: v} for k, v in arrows_node_dict["properties"].items() if "KEY" in v.upper()]
+        props = [
+            Property.from_arrows({k: v})
+            for k, v in arrows_node_dict["properties"].items()
+            if "KEY" not in v.upper()
+        ]
+        keys = [
+            {k: v}
+            for k, v in arrows_node_dict["properties"].items()
+            if "KEY" in v.upper()
+        ]
         key_prop = Property.from_arrows(keys[0]) if keys else None
         metadata = {
             "position": arrows_node_dict["position"],
             "caption": arrows_node_dict["caption"],
             "style": arrows_node_dict["style"],
         }
-        return cls(label=arrows_node_dict["labels"][0], key_property=key_prop, properties=props, metadata=metadata)
-    
-    def to_arrows(self, default_position: dict[str, float] = {"x": 0.0, "y": 0.0}) -> dict[str, Any]:
+        return cls(
+            label=arrows_node_dict["labels"][0],
+            key_property=key_prop,
+            properties=props,
+            metadata=metadata,
+        )
+
+    def to_arrows(
+        self, default_position: dict[str, float] = {"x": 0.0, "y": 0.0}
+    ) -> dict[str, Any]:
         "Convert a Node to an Arrows Node dictionary. Final JSON string formatting is done at the data model level."
         props = dict()
         [props.update(p.to_arrows(is_key=False)) for p in self.properties]
@@ -130,31 +184,50 @@ class Node(BaseModel):
             "caption": self.metadata.get("caption", ""),
         }
 
+
 class Relationship(BaseModel):
     "A Neo4j Relationship."
-    type: str = Field(description="The type of the relationship. Should be in SCREAMING_SNAKE_CASE.")
+
+    type: str = Field(
+        description="The type of the relationship. Should be in SCREAMING_SNAKE_CASE."
+    )
     start_node_label: str = Field(description="The label of the start node")
     end_node_label: str = Field(description="The label of the end node")
-    key_property: Property | None = Field(default=None, description="The key property of the relationship, if any.")
-    properties: list[Property] = Field(default_factory=list, description="The properties of the relationship, if any.")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="The metadata of the relationship. This should only be used when converting data models.")
+    key_property: Property | None = Field(
+        default=None, description="The key property of the relationship, if any."
+    )
+    properties: list[Property] = Field(
+        default_factory=list, description="The properties of the relationship, if any."
+    )
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="The metadata of the relationship. This should only be used when converting data models.",
+    )
 
     @field_validator("properties")
-    def validate_properties(cls, properties: list[Property], info: ValidationInfo) -> list[Property]:
+    def validate_properties(
+        cls, properties: list[Property], info: ValidationInfo
+    ) -> list[Property]:
         "Validate the properties."
         if info.data.get("key_property"):
-            properties = [p for p in properties if p.name != info.data["key_property"].name]
+            properties = [
+                p for p in properties if p.name != info.data["key_property"].name
+            ]
 
         counts = Counter([p.name for p in properties])
         for name, count in counts.items():
             if count > 1:
-                raise ValueError(f"Property {name} appears {count} times in relationship {_generate_relationship_pattern(info.data['start_node_label'], info.data['type'], info.data['end_node_label'])}")
+                raise ValueError(
+                    f"Property {name} appears {count} times in relationship {_generate_relationship_pattern(info.data['start_node_label'], info.data['type'], info.data['end_node_label'])}"
+                )
         return properties
 
     def add_property(self, prop: Property) -> None:
         "Add a new property to the relationship."
         if prop.name in [p.name for p in self.properties]:
-            raise ValueError(f"Property {prop.name} already exists in relationship {self.pattern}")
+            raise ValueError(
+                f"Property {prop.name} already exists in relationship {self.pattern}"
+            )
         self.properties.append(prop)
 
     def remove_property(self, prop: Property) -> None:
@@ -163,12 +236,14 @@ class Relationship(BaseModel):
             self.properties.remove(prop)
         except ValueError:
             pass
-    
+
     @property
     def pattern(self) -> str:
         "Return the pattern of the relationship."
-        return _generate_relationship_pattern(self.start_node_label, self.type, self.end_node_label)
-    
+        return _generate_relationship_pattern(
+            self.start_node_label, self.type, self.end_node_label
+        )
+
     @property
     def all_properties_dict(self) -> dict[str, str]:
         "Return a dictionary of all properties of the relationship. {property_name: property_type}"
@@ -180,19 +255,43 @@ class Relationship(BaseModel):
 
     def to_nvl(self) -> nvl.Relationship:
         "Convert the relationship to a Neo4j Visualization Graph Relationship."
-        return nvl.Relationship(source=self.start_node_label, target=self.end_node_label, caption=self.type, properties=self.all_properties_dict)
-    
+        return nvl.Relationship(
+            source=self.start_node_label,
+            target=self.end_node_label,
+            caption=self.type,
+            properties=self.all_properties_dict,
+        )
+
     @classmethod
-    def from_arrows(cls, arrows_relationship_dict: dict[str, Any], node_id_to_label_map: dict[str, str]) -> "Relationship":
+    def from_arrows(
+        cls,
+        arrows_relationship_dict: dict[str, Any],
+        node_id_to_label_map: dict[str, str],
+    ) -> "Relationship":
         "Convert an Arrows Relationship to a Relationship."
-        props = [Property.from_arrows({k: v}) for k, v in arrows_relationship_dict["properties"].items() if "KEY" not in v.upper()]
-        keys = [{k: v} for k, v in arrows_relationship_dict["properties"].items() if "KEY" in v.upper()]
+        props = [
+            Property.from_arrows({k: v})
+            for k, v in arrows_relationship_dict["properties"].items()
+            if "KEY" not in v.upper()
+        ]
+        keys = [
+            {k: v}
+            for k, v in arrows_relationship_dict["properties"].items()
+            if "KEY" in v.upper()
+        ]
         key_prop = Property.from_arrows(keys[0]) if keys else None
         metadata = {
             "style": arrows_relationship_dict["style"],
         }
-        return cls(type=arrows_relationship_dict["type"], start_node_label=node_id_to_label_map[arrows_relationship_dict["fromId"]], end_node_label=node_id_to_label_map[arrows_relationship_dict["toId"]], key_property=key_prop, properties=props, metadata=metadata)
-    
+        return cls(
+            type=arrows_relationship_dict["type"],
+            start_node_label=node_id_to_label_map[arrows_relationship_dict["fromId"]],
+            end_node_label=node_id_to_label_map[arrows_relationship_dict["toId"]],
+            key_property=key_prop,
+            properties=props,
+            metadata=metadata,
+        )
+
     def to_arrows(self) -> dict[str, Any]:
         "Convert a Relationship to an Arrows Relationship dictionary. Final JSON string formatting is done at the data model level."
         props = dict()
@@ -207,11 +306,20 @@ class Relationship(BaseModel):
             "style": self.metadata.get("style", {}),
         }
 
+
 class DataModel(BaseModel):
     "A Neo4j Graph Data Model."
-    nodes: list[Node] = Field(default_factory=list, description="The nodes of the data model")
-    relationships: list[Relationship] = Field(default_factory=list, description="The relationships of the data model")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="The metadata of the data model. This should only be used when converting data models.")
+
+    nodes: list[Node] = Field(
+        default_factory=list, description="The nodes of the data model"
+    )
+    relationships: list[Relationship] = Field(
+        default_factory=list, description="The relationships of the data model"
+    )
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="The metadata of the data model. This should only be used when converting data models.",
+    )
 
     @field_validator("nodes")
     def validate_nodes(cls, nodes: list[Node]) -> list[Node]:
@@ -220,38 +328,54 @@ class DataModel(BaseModel):
         counts = Counter([n.label for n in nodes])
         for label, count in counts.items():
             if count > 1:
-                raise ValueError(f"Node with label {label} appears {count} times in data model")
+                raise ValueError(
+                    f"Node with label {label} appears {count} times in data model"
+                )
         return nodes
-    
+
     @field_validator("relationships")
-    def validate_relationships(cls, relationships: list[Relationship], info: ValidationInfo) -> list[Relationship]:
+    def validate_relationships(
+        cls, relationships: list[Relationship], info: ValidationInfo
+    ) -> list[Relationship]:
         "Validate the relationships."
 
         # check for duplicate relationships
         counts = Counter([r.pattern for r in relationships])
         for pattern, count in counts.items():
             if count > 1:
-                raise ValueError(f"Relationship with pattern {pattern} appears {count} times in data model")
-        
+                raise ValueError(
+                    f"Relationship with pattern {pattern} appears {count} times in data model"
+                )
+
         # ensure source and target nodes exist
         for relationship in relationships:
-            if relationship.start_node_label not in [n.label for n in info.data["nodes"]]:
-                raise ValueError(f"Relationship {relationship.pattern} has a start node that does not exist in data model")
+            if relationship.start_node_label not in [
+                n.label for n in info.data["nodes"]
+            ]:
+                raise ValueError(
+                    f"Relationship {relationship.pattern} has a start node that does not exist in data model"
+                )
             if relationship.end_node_label not in [n.label for n in info.data["nodes"]]:
-                raise ValueError(f"Relationship {relationship.pattern} has an end node that does not exist in data model")
+                raise ValueError(
+                    f"Relationship {relationship.pattern} has an end node that does not exist in data model"
+                )
 
         return relationships
-    
+
     def add_node(self, node: Node) -> None:
         "Add a new node to the data model."
         if node.label in [n.label for n in self.nodes]:
-            raise ValueError(f"Node with label {node.label} already exists in data model")
+            raise ValueError(
+                f"Node with label {node.label} already exists in data model"
+            )
         self.nodes.append(node)
 
     def add_relationship(self, relationship: Relationship) -> None:
         "Add a new relationship to the data model."
         if relationship.pattern in [r.pattern for r in self.relationships]:
-            raise ValueError(f"Relationship {relationship.pattern} already exists in data model")
+            raise ValueError(
+                f"Relationship {relationship.pattern} already exists in data model"
+            )
         self.relationships.append(relationship)
 
     def remove_node(self, node_label: str) -> None:
@@ -260,30 +384,51 @@ class DataModel(BaseModel):
             [self.nodes.remove(x) for x in self.nodes if x.label == node_label]
         except ValueError:
             pass
-    
-    def remove_relationship(self, relationship_type: str, relationship_start_node_label: str, relationship_end_node_label: str) -> None:
+
+    def remove_relationship(
+        self,
+        relationship_type: str,
+        relationship_start_node_label: str,
+        relationship_end_node_label: str,
+    ) -> None:
         "Remove a relationship from the data model."
-        pattern = _generate_relationship_pattern(relationship_start_node_label, relationship_type, relationship_end_node_label)
+        pattern = _generate_relationship_pattern(
+            relationship_start_node_label,
+            relationship_type,
+            relationship_end_node_label,
+        )
         try:
-            [self.relationships.remove(x) for x in self.relationships if x.pattern == pattern]
+            [
+                self.relationships.remove(x)
+                for x in self.relationships
+                if x.pattern == pattern
+            ]
         except ValueError:
             pass
-    
+
     def to_nvl(self) -> nvl.VisualizationGraph:
         "Convert the data model to a Neo4j Visualization Graph."
-        return nvl.VisualizationGraph(nodes=[n.to_nvl() for n in self.nodes], relationships=[r.to_nvl() for r in self.relationships])
-    
+        return nvl.VisualizationGraph(
+            nodes=[n.to_nvl() for n in self.nodes],
+            relationships=[r.to_nvl() for r in self.relationships],
+        )
+
     @classmethod
     def from_arrows(cls, arrows_data_model_dict: dict[str, Any]) -> "DataModel":
         "Convert an Arrows Data Model to a Data Model."
         nodes = [Node.from_arrows(n) for n in arrows_data_model_dict["nodes"]]
-        node_id_to_label_map = {n["id"]: n["labels"][0] for n in arrows_data_model_dict["nodes"]}
-        relationships = [Relationship.from_arrows(r, node_id_to_label_map) for r in arrows_data_model_dict["relationships"]]
+        node_id_to_label_map = {
+            n["id"]: n["labels"][0] for n in arrows_data_model_dict["nodes"]
+        }
+        relationships = [
+            Relationship.from_arrows(r, node_id_to_label_map)
+            for r in arrows_data_model_dict["relationships"]
+        ]
         metadata = {
             "style": arrows_data_model_dict["style"],
         }
         return cls(nodes=nodes, relationships=relationships, metadata=metadata)
-    
+
     def to_arrows_dict(self) -> dict[str, Any]:
         "Convert the data model to an Arrows Data Model Python dictionary."
         node_spacing: int = 200
@@ -293,7 +438,9 @@ class DataModel(BaseModel):
             if (idx + 1) % 5 == 0:
                 y_current -= 200
             arrows_nodes.append(
-                n.to_arrows(default_position={"x": node_spacing * (idx % 5), "y": y_current})
+                n.to_arrows(
+                    default_position={"x": node_spacing * (idx % 5), "y": y_current}
+                )
             )
         arrows_relationships = [r.to_arrows() for r in self.relationships]
         return {
@@ -301,13 +448,7 @@ class DataModel(BaseModel):
             "relationships": arrows_relationships,
             "style": self.metadata.get("style", {}),
         }
-    
+
     def to_arrows_json_str(self) -> str:
         "Convert the data model to an Arrows Data Model JSON string."
         return json.dumps(self.to_arrows_dict(), indent=2)
-
-    
-    
-    
-    
-
