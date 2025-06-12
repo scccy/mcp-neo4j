@@ -5,6 +5,8 @@
 ### Changed
 
 ### Added
+* Namespace option via CLI or env variables. This allows many Cypher MCP servers to be used at once.
+* Allow transport to be specified via env variables
 
 
 ## v0.2.2 

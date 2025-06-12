@@ -31,19 +31,25 @@ The server offers these core tools:
    - No input required
    - Returns: JSON serialized list of node labels with two dictionaries: one for attributes and one for relationships
 
+### 🏷️ Namespacing
+
+The server supports namespacing to allow multiple Neo4j MCP servers to be used simultaneously. When a namespace is provided, all tool names are prefixed with the namespace followed by a hyphen (e.g., `mydb-read-neo4j-cypher`).
+
+This is useful when you need to connect to multiple Neo4j databases or instances from the same session.
+
 ## 🔧 Usage with Claude Desktop
 
 ### 💾 Released Package
 
 Can be found on PyPi https://pypi.org/project/mcp-neo4j-cypher/
 
-Add the server to your `claude_desktop_config.json` with the database connection configuration through environment variables. You may also specify the transport method with cli arguments.
+Add the server to your `claude_desktop_config.json` with the database connection configuration through environment variables. You may also specify the transport method and namespace with cli arguments or environment variables.
 
 ```json
 "mcpServers": {
   "neo4j-aura": {
     "command": "uvx",
-    "args": [ "mcp-neo4j-cypher@0.2.2", "--transport", "stdio"  ],
+    "args": [ "mcp-neo4j-cypher@0.2.3", "--transport", "stdio"  ],
     "env": {
       "NEO4J_URI": "bolt://localhost:7687",
       "NEO4J_USERNAME": "neo4j",
@@ -54,6 +60,42 @@ Add the server to your `claude_desktop_config.json` with the database connection
 }
 ```
 
+#### Multiple Database Example
+
+Here's an example of connecting to multiple Neo4j databases using namespaces:
+
+```json
+{
+  "mcpServers": {
+    "movies-neo4j": {
+      "command": "uvx",
+      "args": [ "mcp-neo4j-cypher@0.2.3", "--namespace", "movies" ],
+      "env": {
+        "NEO4J_URI": "neo4j+s://demo.neo4jlabs.com",
+        "NEO4J_USERNAME": "recommendations",
+        "NEO4J_PASSWORD": "recommendations",
+        "NEO4J_DATABASE": "recommendations"
+      }
+    },
+    "local-neo4j": {
+      "command": "uvx",
+      "args": [ "mcp-neo4j-cypher@0.2.3" ],
+      "env": {
+        "NEO4J_URI": "bolt://localhost:7687",
+        "NEO4J_USERNAME": "neo4j",
+        "NEO4J_PASSWORD": "password",
+        "NEO4J_DATABASE": "neo4j",
+        "NEO4J_NAMESPACE": "local"
+      }
+    }
+  }
+}
+```
+
+In this setup:
+- The movies database tools will be prefixed with `movies-` (e.g., `movies-read-neo4j-cypher`)
+- The local database tools will be prefixed with `local-` (e.g., `local-get-neo4j-schema`)
+
 Here is an example connection for the movie database with Movie, Person (Actor, Director), Genre, User and ratings:
 
 ```json
@@ -61,7 +103,7 @@ Here is an example connection for the movie database with Movie, Person (Actor, 
   "mcpServers": {
     "movies-neo4j": {
       "command": "uvx",
-      "args": [ "mcp-neo4j-cypher@0.2.2" ],
+      "args": [ "mcp-neo4j-cypher@0.2.3" ],
       "env": {
         "NEO4J_URI": "neo4j+s://demo.neo4jlabs.com",
         "NEO4J_USERNAME": "recommendations",
@@ -83,13 +125,15 @@ Syntax with `--db-url`, `--username` and `--password` command line arguments is 
   "neo4j": {
     "command": "uvx",
     "args": [
-      "mcp-neo4j-cypher@0.2.2",
+      "mcp-neo4j-cypher@0.2.3",
       "--db-url",
       "bolt://localhost",
       "--username",
       "neo4j",
       "--password",
-      "<your-password>"
+      "<your-password>",
+      "--namespace",
+      "mydb"
     ]
   }
 }
@@ -102,7 +146,7 @@ Here is an example connection for the movie database with Movie, Person (Actor, 
   "mcpServers": {
     "movies-neo4j": {
       "command": "uvx",
-      "args": ["mcp-neo4j-cypher@0.2.2", 
+      "args": ["mcp-neo4j-cypher@0.2.3", 
       "--db-url", "neo4j+s://demo.neo4jlabs.com", 
       "--user", "recommendations", 
       "--password", "recommendations",
@@ -125,6 +169,7 @@ Here is an example connection for the movie database with Movie, Person (Actor, 
       "-e", "NEO4J_URI=bolt://host.docker.internal:7687",
       "-e", "NEO4J_USERNAME=neo4j",
       "-e", "NEO4J_PASSWORD=<your-password>",
+      "-e", "NEO4J_NAMESPACE=mydb",
       "mcp/neo4j-cypher:latest"
     ]
   }
@@ -177,7 +222,7 @@ uv pip install -e ".[dev]"
     "command": "uv",
     "args": [
       "--directory", "parent_of_servers_repo/servers/mcp-neo4j-cypher/src",
-      "run", "mcp-neo4j-cypher", "--transport", "stdio"],
+      "run", "mcp-neo4j-cypher", "--transport", "stdio", "--namespace", "dev"],
     "env": {
       "NEO4J_URI": "bolt://localhost",
       "NEO4J_USERNAME": "neo4j",
@@ -200,6 +245,7 @@ docker build -t mcp/neo4j-cypher:latest .
 docker run -e NEO4J_URI="bolt://host.docker.internal:7687" \
           -e NEO4J_USERNAME="neo4j" \
           -e NEO4J_PASSWORD="your-password" \
+          -e NEO4J_NAMESPACE="mydb" \
           mcp/neo4j-cypher:latest
 ```
 
