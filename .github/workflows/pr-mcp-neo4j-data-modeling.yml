@@ -1,4 +1,4 @@
-name: MCP Neo4j Cypher Tests
+name: MCP Neo4j Data Modeling Tests
 
 on:
   push:
