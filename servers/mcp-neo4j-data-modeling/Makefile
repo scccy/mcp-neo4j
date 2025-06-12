@@ -1,6 +1,6 @@
 # Makefile for cypher-guard Python bindings
 
-.PHONY: format test clean
+.PHONY: format test clean inspector build_local_docker_image
 
 format:
 	uv run ruff check --select I . --fix
@@ -12,7 +12,9 @@ test:
 
 inspector:
 	npx @modelcontextprotocol/inspector uv --directory src/mcp_neo4j_data_modeling run mcp-neo4j-data-modeling
-	
+
+build_local_docker_image:
+	docker build -t mcp-neo4j-data-modeling .
 
 clean:
 	rm -rf .mypy_cache/

@@ -33,7 +33,10 @@ class Property(BaseModel):
     "A Neo4j Property."
 
     name: str = Field(description="The name of the property. Should be in camelCase.")
-    type: str = Field(default="STRING", description="The Neo4j type of the property. Should be all caps.")
+    type: str = Field(
+        default="STRING",
+        description="The Neo4j type of the property. Should be all caps.",
+    )
     source: PropertySource | None = Field(
         default=None, description="The source of the property, if known."
     )
@@ -84,7 +87,9 @@ class Property(BaseModel):
 class Node(BaseModel):
     "A Neo4j Node."
 
-    label: str = Field(description="The label of the node. Should be in PascalCase.", min_length=1)
+    label: str = Field(
+        description="The label of the node. Should be in PascalCase.", min_length=1
+    )
     key_property: Property = Field(description="The key property of the node")
     properties: list[Property] = Field(
         default_factory=list, description="The properties of the node"
@@ -189,7 +194,8 @@ class Relationship(BaseModel):
     "A Neo4j Relationship."
 
     type: str = Field(
-        description="The type of the relationship. Should be in SCREAMING_SNAKE_CASE.", min_length=1
+        description="The type of the relationship. Should be in SCREAMING_SNAKE_CASE.",
+        min_length=1,
     )
     start_node_label: str = Field(description="The label of the start node")
     end_node_label: str = Field(description="The label of the end node")

@@ -4,7 +4,6 @@ import webbrowser
 from typing import Any, Literal
 
 from mcp.server.fastmcp import FastMCP
-from mcp import types as mcp_types
 from pydantic import ValidationError
 
 from .data_model import (
@@ -12,7 +11,6 @@ from .data_model import (
     Node,
     Property,
     Relationship,
-    _generate_relationship_pattern,
 )
 
 logger = logging.getLogger("mcp_neo4j_data_modeling")
@@ -24,12 +22,6 @@ def create_mcp_server() -> FastMCP:
     mcp: FastMCP = FastMCP(
         "mcp-neo4j-data-modeling", dependencies=["pydantic", "webbrowser"]
     )
-
-    @mcp.resource("resource://init")
-    def init() -> DataModel:
-        """Create an empty data model."""
-        logger.info("Creating an empty data model.")
-        return DataModel(nodes=[], relationships=[])
 
     @mcp.resource("resource://schema/node")
     def node_schema() -> dict[str, Any]:
@@ -56,47 +48,61 @@ def create_mcp_server() -> FastMCP:
         return DataModel.model_json_schema()
 
     @mcp.tool()
-    def validate_node(node: Node) -> list[mcp_types.TextContent]:
-        "Validate a single node. Returns True if the node is valid, otherwise raises a ValueError."
+    def validate_node(
+        node: Node, return_validated: bool = False
+    ) -> bool | dict[str, Any]:
+        "Validate a single node. Returns True if the node is valid, otherwise raises a ValueError. If return_validated is True, returns the validated node."
         logger.info("Validating a single node.")
         try:
-            Node.model_validate(node, strict=True)
-            logger.info(f"Node validated successfully")
-            return True
+            validated_node = Node.model_validate(node, strict=True)
+            logger.info("Node validated successfully")
+            if return_validated:
+                return validated_node
+            else:
+                return True
         except ValidationError as e:
             logger.error(f"Validation error: {e}")
             raise ValueError(f"Validation error: {e}")
-        
 
     @mcp.tool()
-    def validate_relationship(relationship: Relationship) -> bool:
-        "Validate a single relationship. Returns True if the relationship is valid, otherwise raises a ValueError."
+    def validate_relationship(
+        relationship: Relationship, return_validated: bool = False
+    ) -> bool | dict[str, Any]:
+        "Validate a single relationship. Returns True if the relationship is valid, otherwise raises a ValueError. If return_validated is True, returns the validated relationship."
         logger.info("Validating a single relationship.")
         try:
-            Relationship.model_validate(relationship, strict=True)
-            logger.info(f"Relationship validated successfully")
-            return True
+            validated_relationship = Relationship.model_validate(
+                relationship, strict=True
+            )
+            logger.info("Relationship validated successfully")
+            if return_validated:
+                return validated_relationship
+            else:
+                return True
         except ValidationError as e:
             logger.error(f"Validation error: {e}")
             raise ValueError(f"Validation error: {e}")
 
-
     @mcp.tool()
-    def validate_data_model(data_model: DataModel) -> bool:
-        "Validate the entire data model. Returns True if the data model is valid, otherwise raises a ValueError."
+    def validate_data_model(
+        data_model: DataModel, return_validated: bool = False
+    ) -> bool | dict[str, Any]:
+        "Validate the entire data model. Returns True if the data model is valid, otherwise raises a ValueError. If return_validated is True, returns the validated data model."
         logger.info("Validating the entire data model.")
         try:
             DataModel.model_validate(data_model, strict=True)
-            logger.info(f"Data model validated successfully")
-            return True
+            logger.info("Data model validated successfully")
+            if return_validated:
+                return data_model
+            else:
+                return True
         except ValidationError as e:
             logger.error(f"Validation error: {e}")
             raise ValueError(f"Validation error: {e}")
-        
 
     @mcp.tool()
     def visualize_data_model(data_model: DataModel) -> None:
-        "Open an interactive graph visualization in the default web browser. Warning: May not be useable in Docker environments."
+        "Open an interactive graph visualization in the default web browser. Validates the data model before opening the visualization. Warning: May not be useable in Docker environments."
         logger.info("Validating the data model.")
         try:
             dm_validated = DataModel.model_validate(data_model, strict=True)
@@ -131,7 +137,7 @@ def create_mcp_server() -> FastMCP:
 
     @mcp.tool()
     def export_to_arrows_json(data_model: DataModel) -> str:
-        "Export the data model to the Arrows web application format. Returns a JSON string."
+        "Export the data model to the Arrows web application format. Returns a JSON string. This should be presented to the user as an artifact if possible."
         logger.info("Exporting the data model to the Arrows web application format.")
         return data_model.to_arrows_json_str()
 
