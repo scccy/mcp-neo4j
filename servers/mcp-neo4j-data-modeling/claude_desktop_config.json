@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "neo4j-data-modeling": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--network=host",
+        "-v", "${PWD}:/app",
+        "-e", "MCP_TRANSPORT=stdio",
+        "$(docker build -q -f ${PWD}/Dockerfile ${PWD})"
+      ]
+    }
+  }
+} 
