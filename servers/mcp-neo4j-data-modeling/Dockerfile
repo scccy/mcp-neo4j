@@ -1,22 +1,22 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # Set working directory
 WORKDIR /app
 
 # Install build dependencies
-RUN pip install --no-cache-dir hatchling
+RUN pip install uv
 
+# Copy dependency files first
 COPY pyproject.toml /app/
-
-# Install dependencies
-RUN pip install --no-cache-dir neo4j>=5.26.0 mcp>=1.6.0
-
+COPY uv.lock /app/
 
 # Copy the source code
 COPY src/ /app/src/
 COPY README.md /app/
 
-RUN pip install --no-cache-dir -e .
+# Install the package
+RUN uv sync
+
 
 # Command to run the server using the package entry point
-CMD ["sh", "-c", "mcp-neo4j-data-modeling"]
+CMD ["sh", "-c", "uv run mcp-neo4j-data-modeling --transport ${MCP_TRANSPORT}"]

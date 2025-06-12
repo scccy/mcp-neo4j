@@ -3,11 +3,15 @@
 .PHONY: format test clean
 
 format:
-	uv run ruff format .
 	uv run ruff check --select I . --fix
+	uv run ruff check --fix .
+	uv run ruff format .
 
 test:
-	uv run pytest tests/ -vv
+	uv run pytest tests/ -s 
+
+inspector:
+	npx @modelcontextprotocol/inspector uv --directory src/mcp_neo4j_data_modeling run mcp-neo4j-data-modeling
 	
 
 clean:

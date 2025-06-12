@@ -4,6 +4,7 @@ import webbrowser
 from typing import Any, Literal
 
 from mcp.server.fastmcp import FastMCP
+from mcp import types as mcp_types
 from pydantic import ValidationError
 
 from .data_model import (
@@ -55,16 +56,17 @@ def create_mcp_server() -> FastMCP:
         return DataModel.model_json_schema()
 
     @mcp.tool()
-    def validate_node(node: Node) -> bool:
+    def validate_node(node: Node) -> list[mcp_types.TextContent]:
         "Validate a single node. Returns True if the node is valid, otherwise raises a ValueError."
         logger.info("Validating a single node.")
         try:
             Node.model_validate(node, strict=True)
+            logger.info(f"Node validated successfully")
+            return True
         except ValidationError as e:
             logger.error(f"Validation error: {e}")
             raise ValueError(f"Validation error: {e}")
-        logger.info("Node validated successfully.")
-        return True
+        
 
     @mcp.tool()
     def validate_relationship(relationship: Relationship) -> bool:
@@ -72,11 +74,12 @@ def create_mcp_server() -> FastMCP:
         logger.info("Validating a single relationship.")
         try:
             Relationship.model_validate(relationship, strict=True)
+            logger.info(f"Relationship validated successfully")
+            return True
         except ValidationError as e:
             logger.error(f"Validation error: {e}")
             raise ValueError(f"Validation error: {e}")
-        logger.info("Relationship validated successfully.")
-        return True
+
 
     @mcp.tool()
     def validate_data_model(data_model: DataModel) -> bool:
@@ -84,15 +87,16 @@ def create_mcp_server() -> FastMCP:
         logger.info("Validating the entire data model.")
         try:
             DataModel.model_validate(data_model, strict=True)
+            logger.info(f"Data model validated successfully")
+            return True
         except ValidationError as e:
             logger.error(f"Validation error: {e}")
             raise ValueError(f"Validation error: {e}")
-        logger.info("Data model validated successfully.")
-        return True
+        
 
     @mcp.tool()
     def visualize_data_model(data_model: DataModel) -> None:
-        "Open an interactive graph visualization in the default web browser."
+        "Open an interactive graph visualization in the default web browser. Warning: May not be useable in Docker environments."
         logger.info("Validating the data model.")
         try:
             dm_validated = DataModel.model_validate(data_model, strict=True)
