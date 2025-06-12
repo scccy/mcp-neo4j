@@ -19,6 +19,14 @@ from pydantic import Field
 
 logger = logging.getLogger("mcp_neo4j_cypher")
 
+def _format_namespace(namespace: str) -> str:
+    if namespace:
+        if namespace.endswith("-"):
+            return namespace
+        else:
+            return namespace + "-"
+    else:
+        return ""
 
 async def _read(tx: AsyncTransaction, query: str, params: dict[str, Any]) -> str:
     raw_results = await tx.run(query, params)
@@ -41,7 +49,7 @@ def _is_write_query(query: str) -> bool:
     )
 
 
-def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j") -> FastMCP:
+def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namespace: str = "") -> FastMCP:
     mcp: FastMCP = FastMCP("mcp-neo4j-cypher", dependencies=["neo4j", "pydantic"])
 
     async def get_neo4j_schema() -> list[types.TextContent]:
@@ -126,9 +134,11 @@ RETURN label, apoc.map.fromPairs(attributes) as attributes, apoc.map.fromPairs(r
                 types.TextContent(type="text", text=f"Error: {e}\n{query}\n{params}")
             ]
 
-    mcp.add_tool(get_neo4j_schema)
-    mcp.add_tool(read_neo4j_cypher)
-    mcp.add_tool(write_neo4j_cypher)
+    namespace_prefix = _format_namespace(namespace)
+    
+    mcp.add_tool(get_neo4j_schema, name=namespace_prefix+"get_neo4j_schema")
+    mcp.add_tool(read_neo4j_cypher, name=namespace_prefix+"read_neo4j_cypher")
+    mcp.add_tool(write_neo4j_cypher, name=namespace_prefix+"write_neo4j_cypher")
 
     return mcp
 
@@ -139,6 +149,7 @@ async def main(
     password: str,
     database: str,
     transport: Literal["stdio", "sse"] = "stdio",
+    namespace: str = "",
 ) -> None:
     logger.info("Starting MCP neo4j Server")
 
@@ -150,7 +161,7 @@ async def main(
         ),
     )
 
-    mcp = create_mcp_server(neo4j_driver, database)
+    mcp = create_mcp_server(neo4j_driver, database, namespace)
 
     match transport:
         case "stdio":
