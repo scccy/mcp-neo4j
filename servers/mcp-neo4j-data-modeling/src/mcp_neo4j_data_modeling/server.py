@@ -101,8 +101,8 @@ def create_mcp_server() -> FastMCP:
             raise ValueError(f"Validation error: {e}")
 
     @mcp.tool()
-    def visualize_data_model(data_model: DataModel) -> None:
-        "Open an interactive graph visualization in the default web browser. Validates the data model before opening the visualization. Warning: May not be useable in Docker environments."
+    def visualize_data_model_in_browser(data_model: DataModel) -> None:
+        "Open an interactive graph visualization in the default web browser. Validates the data model before opening the visualization. Warning: May not be useable in some environments such as Docker and Claude Desktop."
         logger.info("Validating the data model.")
         try:
             dm_validated = DataModel.model_validate(data_model, strict=True)
@@ -140,6 +140,17 @@ def create_mcp_server() -> FastMCP:
         "Export the data model to the Arrows web application format. Returns a JSON string. This should be presented to the user as an artifact if possible."
         logger.info("Exporting the data model to the Arrows web application format.")
         return data_model.to_arrows_json_str()
+
+    @mcp.tool()
+    def get_mermaid_config_str(data_model: DataModel) -> str:
+        "Get the Mermaid configuration string for the data model. This may be visualized in Claude Desktop and other applications with Mermaid support."
+        logger.info("Getting the Mermaid configuration string for the data model.")
+        try:
+            dm_validated = DataModel.model_validate(data_model, strict=True)
+        except ValidationError as e:
+            logger.error(f"Validation error: {e}")
+            raise ValueError(f"Validation error: {e}")
+        return dm_validated.get_mermaid_config_str()
 
     return mcp
 
