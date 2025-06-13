@@ -5,6 +5,25 @@ from typing import Any
 import neo4j_viz as nvl
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+NODE_COLOR_PALETTE = [
+    ("#e3f2fd", "#1976d2"),  # Light Blue / Blue
+    ("#f3e5f5", "#7b1fa2"),  # Light Purple / Purple
+    ("#e8f5e8", "#388e3c"),  # Light Green / Green
+    ("#fff3e0", "#f57c00"),  # Light Orange / Orange
+    ("#fce4ec", "#c2185b"),  # Light Pink / Pink
+    ("#e0f2f1", "#00695c"),  # Light Teal / Teal
+    ("#f1f8e9", "#689f38"),  # Light Lime / Lime
+    ("#fff8e1", "#ffa000"),  # Light Amber / Amber
+    ("#e8eaf6", "#3f51b5"),  # Light Indigo / Indigo
+    ("#efebe9", "#5d4037"),  # Light Brown / Brown
+    ("#fafafa", "#424242"),  # Light Grey / Dark Grey
+    ("#e1f5fe", "#0277bd"),  # Light Cyan / Cyan
+    ("#f9fbe7", "#827717"),  # Light Yellow-Green / Olive
+    ("#fff1f0", "#d32f2f"),  # Light Red / Red
+    ("#f4e6ff", "#6a1b9a"),  # Light Violet / Violet
+    ("#e6f7ff", "#1890ff"),  # Very Light Blue / Bright Blue
+]
+
 
 def _generate_relationship_pattern(
     start_node_label: str, relationship_type: str, end_node_label: str
@@ -147,6 +166,12 @@ class Node(BaseModel):
             properties=self.all_properties_dict,
         )
 
+    def get_mermaid_config_str(self) -> str:
+        "Get the Mermaid configuration string for the node."
+        props = [f"<br/>{self.key_property.name}: {self.key_property.type} | KEY"]
+        props.extend([f"<br/>{p.name}: {p.type}" for p in self.properties])
+        return f'{self.label}["{self.label}{''.join(props)}"]'
+
     @classmethod
     def from_arrows(cls, arrows_node_dict: dict[str, Any]) -> "Node":
         "Convert an Arrows Node to a Node."
@@ -267,6 +292,16 @@ class Relationship(BaseModel):
             caption=self.type,
             properties=self.all_properties_dict,
         )
+
+    def get_mermaid_config_str(self) -> str:
+        "Get the Mermaid configuration string for the relationship."
+        props = (
+            [f"<br/>{self.key_property.name}: {self.key_property.type} | KEY"]
+            if self.key_property
+            else []
+        )
+        props.extend([f"<br/>{p.name}: {p.type}" for p in self.properties])
+        return f"{self.start_node_label} -->|{self.type}{''.join(props)}| {self.end_node_label}"
 
     @classmethod
     def from_arrows(
@@ -418,6 +453,33 @@ class DataModel(BaseModel):
             nodes=[n.to_nvl() for n in self.nodes],
             relationships=[r.to_nvl() for r in self.relationships],
         )
+
+    def _generate_mermaid_config_styling_str(self) -> str:
+        "Generate the Mermaid configuration string for the data model."
+        node_color_config = ""
+
+        for idx, node in enumerate(self.nodes):
+            node_color_config += f"classDef node_{idx}_color fill:{NODE_COLOR_PALETTE[idx % len(NODE_COLOR_PALETTE)][0]},stroke:{NODE_COLOR_PALETTE[idx % len(NODE_COLOR_PALETTE)][1]},stroke-width:3px,color:#000,font-size:12px\nclass {node.label} node_{idx}_color\n\n"
+
+        return f"""
+%% Styling 
+{node_color_config}
+        """
+
+    def get_mermaid_config_str(self) -> str:
+        "Get the Mermaid configuration string for the data model."
+        mermaid_nodes = [n.get_mermaid_config_str() for n in self.nodes]
+        mermaid_relationships = [r.get_mermaid_config_str() for r in self.relationships]
+        mermaid_styling = self._generate_mermaid_config_styling_str()
+        return f"""graph TD
+%% Nodes
+{"\n".join(mermaid_nodes)}
+
+%% Relationships
+{"\n".join(mermaid_relationships)}
+
+{mermaid_styling}
+"""
 
     @classmethod
     def from_arrows(cls, arrows_data_model_dict: dict[str, Any]) -> "DataModel":
