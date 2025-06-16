@@ -2,6 +2,8 @@ from typing import Any
 
 import pytest
 
+from mcp_neo4j_data_modeling.data_model import DataModel, Node, Property, Relationship
+
 
 @pytest.fixture(scope="function")
 def arrows_data_model_dict() -> dict[str, Any]:
@@ -130,3 +132,36 @@ def arrows_data_model_dict() -> dict[str, Any]:
             },
         ],
     }
+
+
+@pytest.fixture(scope="function")
+def valid_data_model() -> DataModel:
+    "A simple valid data model with a Person node, a Place node, and a LIVES_IN relationship."
+    nodes = [
+        Node(
+            label="Person",
+            key_property=Property(
+                name="id", type="STRING", description="Unique identifier"
+            ),
+            properties=[
+                Property(name="name", type="STRING", description="Name of the person"),
+                Property(name="age", type="INTEGER", description="Age of the person"),
+            ],
+        ),
+        Node(
+            label="Place",
+            key_property=Property(
+                name="id", type="STRING", description="Unique identifier"
+            ),
+            properties=[
+                Property(name="name", type="STRING", description="Name of the place")
+            ],
+        ),
+    ]
+
+    relationship = Relationship(
+        type="LIVES_IN",
+        start_node_label="Person",
+        end_node_label="Place",
+    )
+    return DataModel(nodes=nodes, relationships=[relationship])

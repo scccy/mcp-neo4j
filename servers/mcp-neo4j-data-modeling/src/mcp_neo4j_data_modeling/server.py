@@ -4,7 +4,7 @@ import webbrowser
 from typing import Any, Literal
 
 from mcp.server.fastmcp import FastMCP
-from pydantic import ValidationError
+from pydantic import Field, ValidationError
 
 from .data_model import (
     DataModel,
@@ -12,6 +12,7 @@ from .data_model import (
     Property,
     Relationship,
 )
+from .static import DATA_INGEST_PROCESS
 
 logger = logging.getLogger("mcp_neo4j_data_modeling")
 
@@ -46,6 +47,12 @@ def create_mcp_server() -> FastMCP:
         """Get the schema for a data model."""
         logger.info("Getting the schema for a data model.")
         return DataModel.model_json_schema()
+
+    @mcp.resource("resource://static/neo4j_data_ingest_process")
+    def neo4j_data_ingest_process() -> str:
+        """Get the process for ingesting data into a Neo4j database."""
+        logger.info("Getting the process for ingesting data into a Neo4j database.")
+        return DATA_INGEST_PROCESS
 
     @mcp.tool()
     def validate_node(
@@ -151,6 +158,58 @@ def create_mcp_server() -> FastMCP:
             logger.error(f"Validation error: {e}")
             raise ValueError(f"Validation error: {e}")
         return dm_validated.get_mermaid_config_str()
+
+    @mcp.tool()
+    def get_node_cypher_ingest_query_for_many_records(
+        node: Node = Field(description="The node to get the Cypher query for."),
+    ) -> str:
+        """
+        Get the Cypher query to ingest a list of Node records into a Neo4j database.
+        This should be used to ingest data into a Neo4j database.
+        This is a parameterized Cypher query that takes a list of records as input to the $records parameter.
+        """
+        logger.info(
+            f"Getting the Cypher query to ingest a list of Node records into a Neo4j database for node {node.label}."
+        )
+        return node.get_cypher_ingest_query_for_many_records()
+
+    @mcp.tool()
+    def get_relationship_cypher_ingest_query_for_many_records(
+        data_model: DataModel = Field(
+            description="The data model snippet that contains the relationship, start node and end node."
+        ),
+        relationship_type: str = Field(
+            description="The type of the relationship to get the Cypher query for."
+        ),
+        relationship_start_node_label: str = Field(
+            description="The label of the relationship start node."
+        ),
+        relationship_end_node_label: str = Field(
+            description="The label of the relationship end node."
+        ),
+    ) -> str:
+        """
+        Get the Cypher query to ingest a list of Relationship records into a Neo4j database.
+        This should be used to ingest data into a Neo4j database.
+        This is a parameterized Cypher query that takes a list of records as input to the $records parameter.
+        The records must contain the Relationship properties, if any, as well as the sourceId and targetId properties of the start and end nodes respectively.
+        """
+        logger.info(
+            "Getting the Cypher query to ingest a list of Relationship records into a Neo4j database."
+        )
+        return data_model.get_relationship_cypher_ingest_query_for_many_records(
+            relationship_type,
+            relationship_start_node_label,
+            relationship_end_node_label,
+        )
+
+    @mcp.tool()
+    def get_constraints_cypher_queries(data_model: DataModel) -> list[str]:
+        "Get the Cypher queries to create constraints on the data model. This creates range indexes on the key properties of the nodes and relationships and enforces uniqueness and existence of the key properties."
+        logger.info(
+            "Getting the Cypher queries to create constraints on the data model."
+        )
+        return data_model.get_cypher_constraints_query()
 
     return mcp
 

@@ -507,3 +507,140 @@ def test_data_model_arrows_round_trip(arrows_data_model_dict: dict[str, Any]):
         == arrows_data_model_dict["relationships"][1]["type"]
     )
     assert arrows_data_model_dict_copy["style"] == arrows_data_model_dict["style"]
+
+
+def test_node_cypher_generation_for_many_records():
+    """Test generating a Cypher query to ingest a list of Node records into a Neo4j database."""
+    node = Node(
+        label="Person",
+        key_property=Property(
+            name="id", type="STRING", description="Unique identifier"
+        ),
+        properties=[
+            Property(name="name", type="STRING", description="Name of the person"),
+            Property(name="age", type="INTEGER", description="Age of the person"),
+        ],
+    )
+
+    query = node.get_cypher_ingest_query_for_many_records()
+
+    assert (
+        query
+        == """UNWIND $records as record
+MERGE (n: Person {id: record.id})
+SET n += {name: record.name, age: record.age}"""
+    )
+
+
+def test_relationship_cypher_generation_for_many_records():
+    """Test generating a Cypher query to ingest a list of Relationship records into a Neo4j database."""
+    relationship = Relationship(
+        type="KNOWS",
+        start_node_label="Person",
+        end_node_label="Place",
+        key_property=Property(
+            name="relId", type="STRING", description="Unique identifier"
+        ),
+        properties=[Property(name="since", type="DATE", description="Since date")],
+    )
+
+    query = relationship.get_cypher_ingest_query_for_many_records(
+        start_node_key_property_name="personId", end_node_key_property_name="placeId"
+    )
+
+    assert (
+        query
+        == """UNWIND $records as record
+MATCH (start: Person {personId: record.sourceId})
+MATCH (end: Place {placeId: record.targetId})
+MERGE (start)-[:KNOWS {relId: record.relId}]->(end)
+SET end += {since: record.since}"""
+    )
+
+
+def test_relationship_cypher_generation_for_many_records_no_key_property():
+    """Test generating a Cypher query to ingest a list of Relationship records into a Neo4j database."""
+    relationship = Relationship(
+        type="KNOWS",
+        start_node_label="Person",
+        end_node_label="Place",
+        properties=[Property(name="since", type="DATE", description="Since date")],
+    )
+
+    query = relationship.get_cypher_ingest_query_for_many_records(
+        start_node_key_property_name="personId", end_node_key_property_name="placeId"
+    )
+
+    assert (
+        query
+        == """UNWIND $records as record
+MATCH (start: Person {personId: record.sourceId})
+MATCH (end: Place {placeId: record.targetId})
+MERGE (start)-[:KNOWS]->(end)
+SET end += {since: record.since}"""
+    )
+
+
+def test_relationship_cypher_generation_for_many_records_no_properties():
+    """Test generating a Cypher query to ingest a list of Relationship records into a Neo4j database."""
+    relationship = Relationship(
+        type="KNOWS",
+        start_node_label="Person",
+        end_node_label="Place",
+    )
+    query = relationship.get_cypher_ingest_query_for_many_records(
+        start_node_key_property_name="personId", end_node_key_property_name="placeId"
+    )
+
+    assert (
+        query
+        == """UNWIND $records as record
+MATCH (start: Person {personId: record.sourceId})
+MATCH (end: Place {placeId: record.targetId})
+MERGE (start)-[:KNOWS]->(end)"""
+    )
+
+
+def test_get_node_cypher_ingest_query_for_many_records(valid_data_model: DataModel):
+    """Test generating a Cypher query to ingest a list of Node records into a Neo4j database."""
+
+    query = valid_data_model.get_node_cypher_ingest_query_for_many_records("Person")
+
+    assert (
+        query
+        == """UNWIND $records as record
+MERGE (n: Person {id: record.id})
+SET n += {name: record.name, age: record.age}"""
+    )
+
+
+def test_get_relationship_cypher_ingest_query_for_many_records(
+    valid_data_model: DataModel,
+):
+    """Test generating a Cypher query to ingest a list of Relationship records into a Neo4j database."""
+    query = valid_data_model.get_relationship_cypher_ingest_query_for_many_records(
+        "LIVES_IN", "Person", "Place"
+    )
+
+    assert (
+        query
+        == """UNWIND $records as record
+MATCH (start: Person {id: record.sourceId})
+MATCH (end: Place {id: record.targetId})
+MERGE (start)-[:LIVES_IN]->(end)"""
+    )
+
+
+def test_get_cypher_constraints_query(valid_data_model: DataModel):
+    """Test generating a list of Cypher queries to create constraints on the data model."""
+    queries = valid_data_model.get_cypher_constraints_query()
+
+    assert len(queries) == 2
+    assert (
+        queries[0]
+        == "CREATE CONSTRAINT Person_constraint IF NOT EXISTS FOR (n:Person) REQUIRE (n.id) IS NODE KEY;"
+    )
+    assert (
+        queries[1]
+        == "CREATE CONSTRAINT Place_constraint IF NOT EXISTS FOR (n:Place) REQUIRE (n.id) IS NODE KEY;"
+    )
