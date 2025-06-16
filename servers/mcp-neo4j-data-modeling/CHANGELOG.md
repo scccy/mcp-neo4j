@@ -5,7 +5,8 @@
 ### Changed
 
 ### Added
-
+* Code generation tools for ingestion queries
+* Resource that explains the recommended process of ingesting data into Neo4j
 
 ## v0.1.0
 

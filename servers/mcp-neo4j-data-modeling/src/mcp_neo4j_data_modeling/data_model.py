@@ -170,7 +170,7 @@ class Node(BaseModel):
         "Get the Mermaid configuration string for the node."
         props = [f"<br/>{self.key_property.name}: {self.key_property.type} | KEY"]
         props.extend([f"<br/>{p.name}: {p.type}" for p in self.properties])
-        return f'{self.label}["{self.label}{''.join(props)}"]'
+        return f'{self.label}["{self.label}{"".join(props)}"]'
 
     @classmethod
     def from_arrows(cls, arrows_node_dict: dict[str, Any]) -> "Node":
@@ -213,6 +213,25 @@ class Node(BaseModel):
             "position": self.metadata.get("position", default_position),
             "caption": self.metadata.get("caption", ""),
         }
+
+    def get_cypher_ingest_query_for_many_records(self) -> str:
+        """
+        Generate a Cypher query to ingest a list of Node records into a Neo4j database.
+        This query takes a parameter $records that is a list of dictionaries, each representing a Node record.
+        """
+        formatted_props = ", ".join(
+            [f"{p.name}: record.{p.name}" for p in self.properties]
+        )
+        return f"""UNWIND $records as record
+MERGE (n: {self.label} {{{self.key_property.name}: record.{self.key_property.name}}})
+SET n += {{{formatted_props}}}"""
+
+    def get_cypher_constraint_query(self) -> str:
+        """
+        Generate a Cypher query to create a NODE KEY constraint on the node.
+        This creates a range index on the key property of the node and enforces uniqueness and existence of the key property.
+        """
+        return f"CREATE CONSTRAINT {self.label}_constraint IF NOT EXISTS FOR (n:{self.label}) REQUIRE (n.{self.key_property.name}) IS NODE KEY"
 
 
 class Relationship(BaseModel):
@@ -347,6 +366,41 @@ class Relationship(BaseModel):
             "style": self.metadata.get("style", {}),
         }
 
+    def get_cypher_ingest_query_for_many_records(
+        self, start_node_key_property_name: str, end_node_key_property_name: str
+    ) -> str:
+        """
+        Generate a Cypher query to ingest a list of Relationship records into a Neo4j database.
+        The sourceId and targetId properties are used to match the start and end nodes.
+        This query takes a parameter $records that is a list of dictionaries, each representing a Relationship record.
+        """
+        formatted_props = ", ".join(
+            [f"{p.name}: record.{p.name}" for p in self.properties]
+        )
+        key_prop = (
+            f" {{{self.key_property.name}: record.{self.key_property.name}}}"
+            if self.key_property
+            else ""
+        )
+        query = f"""UNWIND $records as record
+MATCH (start: {self.start_node_label} {{{start_node_key_property_name}: record.sourceId}})
+MATCH (end: {self.end_node_label} {{{end_node_key_property_name}: record.targetId}})
+MERGE (start)-[:{self.type}{key_prop}]->(end)"""
+        if formatted_props:
+            query += f"""
+SET end += {{{formatted_props}}}"""
+        return query
+
+    def get_cypher_constraint_query(self) -> str | None:
+        """
+        Generate a Cypher query to create a RELATIONSHIP KEY constraint on the relationship.
+        This creates a range index on the key property of the relationship and enforces uniqueness and existence of the key property.
+        """
+        if self.key_property:
+            return f"CREATE CONSTRAINT {self.type}_constraint IF NOT EXISTS FOR ()-[r:{self.type}]->() REQUIRE (r.{self.key_property.name}) IS RELATIONSHIP KEY"
+        else:
+            return None
+
 
 class DataModel(BaseModel):
     "A Neo4j Graph Data Model."
@@ -402,6 +456,16 @@ class DataModel(BaseModel):
                 )
 
         return relationships
+
+    @property
+    def nodes_dict(self) -> dict[str, Node]:
+        "Return a dictionary of the nodes of the data model. {node_label: node_dict}"
+        return {n.label: n for n in self.nodes}
+
+    @property
+    def relationships_dict(self) -> dict[str, Relationship]:
+        "Return a dictionary of the relationships of the data model. {relationship_pattern: relationship_dict}"
+        return {r.pattern: r for r in self.relationships}
 
     def add_node(self, node: Node) -> None:
         "Add a new node to the data model."
@@ -520,3 +584,40 @@ class DataModel(BaseModel):
     def to_arrows_json_str(self) -> str:
         "Convert the data model to an Arrows Data Model JSON string."
         return json.dumps(self.to_arrows_dict(), indent=2)
+
+    def get_node_cypher_ingest_query_for_many_records(self, node_label: str) -> str:
+        "Generate a Cypher query to ingest a list of Node records into a Neo4j database."
+        node = self.nodes_dict[node_label]
+        return node.get_cypher_ingest_query_for_many_records()
+
+    def get_relationship_cypher_ingest_query_for_many_records(
+        self,
+        relationship_type: str,
+        relationship_start_node_label: str,
+        relationship_end_node_label: str,
+    ) -> str:
+        "Generate a Cypher query to ingest a list of Relationship records into a Neo4j database."
+        pattern = _generate_relationship_pattern(
+            relationship_start_node_label,
+            relationship_type,
+            relationship_end_node_label,
+        )
+        relationship = self.relationships_dict[pattern]
+        start_node = self.nodes_dict[relationship.start_node_label]
+        end_node = self.nodes_dict[relationship.end_node_label]
+        return relationship.get_cypher_ingest_query_for_many_records(
+            start_node.key_property.name, end_node.key_property.name
+        )
+
+    def get_cypher_constraints_query(self) -> list[str]:
+        """
+        Generate a list of Cypher queries to create constraints on the data model.
+        This creates range indexes on the key properties of the nodes and relationships and enforces uniqueness and existence of the key properties.
+        """
+        node_queries = [n.get_cypher_constraint_query() + ";" for n in self.nodes]
+        relationship_queries = [
+            r.get_cypher_constraint_query() + ";"
+            for r in self.relationships
+            if r.key_property is not None
+        ]
+        return node_queries + relationship_queries
