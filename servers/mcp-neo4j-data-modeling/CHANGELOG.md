@@ -1,6 +1,14 @@
 ## Next
 
 ### Fixed
+
+### Changed
+
+### Added
+
+## v0.1.1
+
+### Fixed
 * Shorten tool names to comply with Cursor name length restrictions
 
 ### Changed
