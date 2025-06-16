@@ -10,10 +10,6 @@ A Model Context Protocol (MCP) server implementation that provides tools for cre
 
 The server provides these resources:
 
-- `resource://init`
-   - Create an empty data model to start with
-   - Returns: Empty DataModel with no nodes or relationships
-
 - `resource://schema/node`
    - Get the JSON schema for a Node object
    - Returns: JSON schema defining the structure of a Node
@@ -29,6 +25,11 @@ The server provides these resources:
 - `resource://schema/data_model`
    - Get the JSON schema for a DataModel object
    - Returns: JSON schema defining the structure of a DataModel
+  
+- `resource://neo4j_data_ingest_process`
+   - Get a detailed explanation of the recommended process for ingesting data into Neo4j using the data model
+   - Returns: Markdown document explaining the ingest process
+
 
 ### 🛠️ Tools
 
@@ -54,11 +55,11 @@ The server offers these core tools:
    - Returns: True if valid, raises ValueError if invalid
 
 #### 👁️ Visualization Tools
-- `visualize_data_model`
-   - Generate and open an interactive visualization of the data model in your browser
+- `get_mermaid_config_str`
+   - Generate a Mermaid diagram configuration string for the data model, suitable for visualization in tools that support Mermaid
    - Input:
      - `data_model` (DataModel): The data model to visualize
-   - Returns: None (opens browser visualization)
+   - Returns: Mermaid configuration string representing the data model
 
 #### 🔄 Import/Export Tools
 
@@ -76,6 +77,31 @@ These tools provide integration with **[Arrows](https://arrows.app/)** - a graph
      - `data_model` (DataModel): The data model to export
    - Returns: JSON string compatible with Arrows app
 
+#### 📝 Cypher Ingest Tools
+
+These tools may be used to create Cypher ingest queries based on the data model. These queries may then be used by other MCP servers or applications to load data into Neo4j.
+
+- `get_constraints_cypher_queries`
+   - Generate Cypher queries to create constraints (e.g., unique keys) for all nodes in the data model
+   - Input:
+     - `data_model` (DataModel): The data model to generate constraints for
+   - Returns: List of Cypher statements for constraints
+
+- `get_node_cypher_ingest_query`
+   - Generate a Cypher query to ingest a list of node records into Neo4j
+   - Input:
+     - `node` (Node): The node definition (label, key property, properties)
+   - Returns: Parameterized Cypher query for bulk node ingestion (using `$records`)
+
+- `get_relationship_cypher_ingest_query`
+   - Generate a Cypher query to ingest a list of relationship records into Neo4j
+   - Input:
+     - `data_model` (DataModel): The data model containing nodes and relationships
+     - `relationship_type` (str): The type of the relationship
+     - `relationship_start_node_label` (str): The label of the start node
+     - `relationship_end_node_label` (str): The label of the end node
+   - Returns: Parameterized Cypher query for bulk relationship ingestion (using `$records`)
+
 ## 🔧 Usage with Claude Desktop
 
 ### 💾 Released Package
@@ -88,7 +114,7 @@ Add the server to your `claude_desktop_config.json` with the transport method sp
 "mcpServers": {
   "neo4j-data-modeling": {
     "command": "uvx",
-    "args": [ "mcp-neo4j-data-modeling@0.1.0", "--transport", "stdio" ]
+    "args": [ "mcp-neo4j-data-modeling@0.1.1", "--transport", "stdio" ]
   }
 }
 ```
