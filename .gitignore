@@ -47,3 +47,4 @@ Thumbs.db
 __pycache__
 servers/mcp-neo4j-data-modeling/test.ipynb
 servers/mcp-neo4j-data-modeling/src/mcp_neo4j_data_modeling/temp.html
+mcp.json

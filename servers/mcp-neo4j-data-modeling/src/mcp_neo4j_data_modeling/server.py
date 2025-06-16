@@ -127,7 +127,7 @@ def create_mcp_server() -> FastMCP:
         return dm_validated.get_mermaid_config_str()
 
     @mcp.tool()
-    def get_node_cypher_ingest_query_for_many_records(
+    def get_node_cypher_ingest_query(
         node: Node = Field(description="The node to get the Cypher query for."),
     ) -> str:
         """
@@ -141,7 +141,7 @@ def create_mcp_server() -> FastMCP:
         return node.get_cypher_ingest_query_for_many_records()
 
     @mcp.tool()
-    def get_relationship_cypher_ingest_query_for_many_records(
+    def get_relationship_cypher_ingest_query(
         data_model: DataModel = Field(
             description="The data model snippet that contains the relationship, start node and end node."
         ),

@@ -1,6 +1,7 @@
 ## Next
 
 ### Fixed
+* Shorten tool names to comply with Cursor name length restrictions
 
 ### Changed
 * Removed NVL visualization due to compatibility issues
