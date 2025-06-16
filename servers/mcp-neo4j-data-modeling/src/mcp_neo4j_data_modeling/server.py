@@ -1,6 +1,4 @@
 import logging
-import os
-import webbrowser
 from typing import Any, Literal
 
 from mcp.server.fastmcp import FastMCP
@@ -20,9 +18,7 @@ logger = logging.getLogger("mcp_neo4j_data_modeling")
 def create_mcp_server() -> FastMCP:
     """Create an MCP server instance for data modeling."""
 
-    mcp: FastMCP = FastMCP(
-        "mcp-neo4j-data-modeling", dependencies=["pydantic", "webbrowser"]
-    )
+    mcp: FastMCP = FastMCP("mcp-neo4j-data-modeling", dependencies=["pydantic"])
 
     @mcp.resource("resource://schema/node")
     def node_schema() -> dict[str, Any]:
@@ -106,35 +102,6 @@ def create_mcp_server() -> FastMCP:
         except ValidationError as e:
             logger.error(f"Validation error: {e}")
             raise ValueError(f"Validation error: {e}")
-
-    @mcp.tool()
-    def visualize_data_model_in_browser(data_model: DataModel) -> None:
-        "Open an interactive graph visualization in the default web browser. Validates the data model before opening the visualization. Warning: May not be useable in some environments such as Docker and Claude Desktop."
-        logger.info("Validating the data model.")
-        try:
-            dm_validated = DataModel.model_validate(data_model, strict=True)
-        except ValidationError as e:
-            logger.error(f"Validation error: {e}")
-            raise ValueError(f"Validation error: {e}")
-
-        def open_html_in_browser(html_content, filename="temp.html"):
-            """Opens an HTML string in the default web browser.
-
-            Args:
-                html_content: The HTML content as a string.
-                filename: The name of the temporary HTML file.
-            """
-            with open(filename, "w") as f:
-                f.write(html_content)
-
-            # Construct the file URL
-            file_url = "file://" + os.path.realpath(filename)
-            webbrowser.open_new_tab(file_url)
-
-        logger.info(
-            "Opening an interactive graph visualization in the default web browser."
-        )
-        open_html_in_browser(dm_validated.to_nvl().render().data)
 
     @mcp.tool()
     def load_from_arrows_json(arrows_data_model_dict: dict[str, Any]) -> DataModel:

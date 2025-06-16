@@ -2,7 +2,6 @@ import json
 from collections import Counter
 from typing import Any
 
-import neo4j_viz as nvl
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 NODE_COLOR_PALETTE = [
@@ -156,16 +155,6 @@ class Node(BaseModel):
             props.update({self.key_property.name: f"{self.key_property.type} | KEY"})
         return props
 
-    def to_nvl(self) -> nvl.Node:
-        "Convert the node to a Neo4j Visualization Graph Node."
-        return nvl.Node(
-            id=self.label,
-            caption=self.label,
-            size=20,
-            caption_size=1,
-            properties=self.all_properties_dict,
-        )
-
     def get_mermaid_config_str(self) -> str:
         "Get the Mermaid configuration string for the node."
         props = [f"<br/>{self.key_property.name}: {self.key_property.type} | KEY"]
@@ -302,15 +291,6 @@ class Relationship(BaseModel):
         if self.key_property:
             props.update({self.key_property.name: f"{self.key_property.type} | KEY"})
         return props
-
-    def to_nvl(self) -> nvl.Relationship:
-        "Convert the relationship to a Neo4j Visualization Graph Relationship."
-        return nvl.Relationship(
-            source=self.start_node_label,
-            target=self.end_node_label,
-            caption=self.type,
-            properties=self.all_properties_dict,
-        )
 
     def get_mermaid_config_str(self) -> str:
         "Get the Mermaid configuration string for the relationship."
@@ -510,13 +490,6 @@ class DataModel(BaseModel):
             ]
         except ValueError:
             pass
-
-    def to_nvl(self) -> nvl.VisualizationGraph:
-        "Convert the data model to a Neo4j Visualization Graph."
-        return nvl.VisualizationGraph(
-            nodes=[n.to_nvl() for n in self.nodes],
-            relationships=[r.to_nvl() for r in self.relationships],
-        )
 
     def _generate_mermaid_config_styling_str(self) -> str:
         "Generate the Mermaid configuration string for the data model."
