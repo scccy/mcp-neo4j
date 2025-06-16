@@ -33,6 +33,12 @@ Manage your [Neo4j Aura](https://console.neo4j.io) instances directly from the c
 
 Create and destroy instances, find instances by name, scale them up and down and enable features.
 
+### `mcp-neo4j-data-modeling` - interactive graph data modeling and visualization
+
+[Details in Readme](./servers/mcp-neo4j-data-modeling/)
+
+Create, validate, and visualize Neo4j graph data models. Allows for model import/export from Arrows.app.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
