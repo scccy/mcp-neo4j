@@ -108,32 +108,32 @@ class Neo4jMemory:
         return KnowledgeGraph(entities=entities, relations=relations)
 
     async def create_entities(self, entities: List[Entity]) -> List[Entity]:
-        query = """
-        UNWIND $entities as entity
-        MERGE (e:Memory { name: entity.name })
-        SET e += entity {.type, .observations}
-        SET e:$(entity.type)
-        """
-        
-        entities_data = [entity.model_dump() for entity in entities]
-        self.neo4j_driver.execute_query(query, {"entities": entities_data})
+        for entity in entities:
+            query = f"""
+            WITH $entity as entity
+            MERGE (e:Memory {{ name: entity.name }})
+            SET e += entity {{ .type, .observations }}
+            SET e:{entity.type}
+            """
+            self.neo4j_driver.execute_query(query, {"entity": entity.model_dump()})
+
         return entities
 
     async def create_relations(self, relations: List[Relation]) -> List[Relation]:
         for relation in relations:
-            query = """
-            UNWIND $relations as relation
+            query = f"""
+            WITH $relation as relation
             MATCH (from:Memory),(to:Memory)
             WHERE from.name = relation.source
             AND  to.name = relation.target
-            MERGE (from)-[r:$(relation.relationType)]->(to)
+            MERGE (from)-[r:{relation.relationType}]->(to)
             """
             
             self.neo4j_driver.execute_query(
                 query, 
-                {"relations": [relation.model_dump() for relation in relations]}
+                {"relation": relation.model_dump()}
             )
-        
+
         return relations
 
     async def add_observations(self, observations: List[ObservationAddition]) -> List[Dict[str, Any]]:
@@ -176,17 +176,18 @@ class Neo4jMemory:
         )
 
     async def delete_relations(self, relations: List[Relation]) -> None:
-        query = """
-        UNWIND $relations as relation
-        MATCH (source:Memory)-[r:$(relation.relationType)]->(target:Memory)
-        WHERE source.name = relation.source
-        AND target.name = relation.target
-        DELETE r
-        """
-        self.neo4j_driver.execute_query(
-            query, 
-            {"relations": [relation.model_dump() for relation in relations]}
-        )
+        for relation in relations:
+            query = f"""
+            WITH $relation as relation
+            MATCH (source:Memory)-[r:{relation.relationType}]->(target:Memory)
+            WHERE source.name = relation.source
+            AND target.name = relation.target
+            DELETE r
+            """
+            self.neo4j_driver.execute_query(
+                query, 
+                {"relation": relation.model_dump()}
+            )
 
     async def read_graph(self) -> KnowledgeGraph:
         return await self.load_graph()
