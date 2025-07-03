@@ -115,7 +115,7 @@ Here is an example connection for the movie database with Movie, Person (Actor, 
 }
 ```
 
-Syntax with `--db-url`, `--username` and `--password` command line arguments is still supported but environment variables are preferred:
+Syntax with `--db-url`, `--username`, `--password` and other command line arguments is still supported but environment variables are preferred:
 
 <details>
   <summary>Legacy Syntax</summary>
@@ -133,7 +133,13 @@ Syntax with `--db-url`, `--username` and `--password` command line arguments is 
       "--password",
       "<your-password>",
       "--namespace",
-      "mydb"
+      "mydb",
+      "--transport",
+      "sse",
+      "--server-host",
+      "0.0.0.0",
+      "--server-port",
+      "8000"
     ]
   }
 }
@@ -174,6 +180,139 @@ Here is an example connection for the movie database with Movie, Person (Actor, 
     ]
   }
 }
+```
+
+## 🐳 Docker Deployment
+
+The Neo4j MCP server can be deployed using Docker for both local development and production use. Docker deployment supports both stdio and SSE transports.
+
+### 📦 Pre-built Image
+
+Use the pre-built Docker image for quick deployment:
+
+```bash
+# Run with SSE transport
+docker run --rm -p 8000:8000 \
+  -e NEO4J_URI="bolt://host.docker.internal:7687" \
+  -e NEO4J_USERNAME="neo4j" \
+  -e NEO4J_PASSWORD="password" \
+  -e NEO4J_DATABASE="neo4j" \
+  -e NEO4J_TRANSPORT="sse" \
+  -e NEO4J_MCP_SERVER_HOST="0.0.0.0" \
+  -e NEO4J_MCP_SERVER_PORT="8000" \
+  mcp/neo4j-cypher:latest
+```
+
+### 🔧 Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEO4J_URI` | `bolt://localhost:7687` | Neo4j connection URI |
+| `NEO4J_USERNAME` | `neo4j` | Neo4j username |
+| `NEO4J_PASSWORD` | `password` | Neo4j password |
+| `NEO4J_DATABASE` | `neo4j` | Neo4j database name |
+| `NEO4J_TRANSPORT` | `stdio` | Transport protocol (`stdio` or `sse`) |
+| `NEO4J_NAMESPACE` | _(empty)_ | Tool namespace prefix |
+| `NEO4J_MCP_SERVER_HOST` | `127.0.0.1` | Host to bind to (use `0.0.0.0` for Docker) |
+| `NEO4J_MCP_SERVER_PORT` | `8000` | Port for SSE transport |
+
+### 🌐 SSE Transport for Web Access
+
+When using SSE transport, the server exposes an HTTP endpoint that can be accessed from web browsers or HTTP clients:
+
+```bash
+# Start the server with SSE transport
+docker run -d -p 8000:8000 \
+  -e NEO4J_URI="neo4j+s://demo.neo4jlabs.com" \
+  -e NEO4J_USERNAME="recommendations" \
+  -e NEO4J_PASSWORD="recommendations" \
+  -e NEO4J_DATABASE="recommendations" \
+  -e NEO4J_TRANSPORT="sse" \
+  -e NEO4J_MCP_SERVER_HOST="0.0.0.0" \
+  -e NEO4J_MCP_SERVER_PORT="8000" \
+  --name neo4j-mcp-server \
+  mcp/neo4j-cypher:latest
+
+# Test the SSE endpoint
+curl http://localhost:8000/sse
+
+# Use with MCP Inspector
+npx @modelcontextprotocol/inspector http://localhost:8000/sse
+```
+
+### 🐳 Docker Compose
+
+For more complex deployments, you may use Docker Compose:
+
+```yaml
+version: '3.8'
+
+services:
+  # Deploy Neo4j Database (optional)
+  neo4j:
+    image: neo4j:5.26.1 # or another version
+    environment:
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_PLUGINS=["apoc"]
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    volumes:
+      - neo4j_data:/data
+
+  # Deploy Cypher MCP Server
+  mcp-neo4j-cypher-server:
+    image: mcp/neo4j-cypher:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - NEO4J_URI=bolt://host.docker.internal:7687
+      - NEO4J_USERNAME=neo4j
+      - NEO4J_PASSWORD=password
+      - NEO4J_DATABASE=neo4j
+      - NEO4J_TRANSPORT=sse
+      - NEO4J_MCP_SERVER_HOST=0.0.0.0 # must be 0.0.0.0 for sse transport in Docker
+      - NEO4J_MCP_SERVER_PORT=8000
+      - NEO4J_NAMESPACE=local
+    depends_on:
+      - neo4j
+
+volumes:
+  neo4j_data:
+```
+
+Run with: `docker-compose up -d`
+
+### 🔗 Claude Desktop Integration with Docker
+
+For Claude Desktop integration with a Dockerized server using SSE transport:
+
+```json
+{
+  "mcpServers": {
+    "neo4j-docker": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote@latest", "http://localhost:8000/sse"]
+    }
+  }
+}
+```
+
+### Local Build
+
+Build and run the Docker container:
+
+```bash
+# Build the image
+docker build -t mcp/neo4j-cypher:latest .
+
+# Run the container
+docker run -e NEO4J_URI="bolt://host.docker.internal:7687" \
+          -e NEO4J_USERNAME="neo4j" \
+          -e NEO4J_PASSWORD="your-password" \
+          -e NEO4J_NAMESPACE="mydb" \
+          -e NEO4J_TRANSPORT="stdio" \
+          mcp/neo4j-cypher:latest
 ```
 
 ## 🚀 Development
@@ -221,8 +360,15 @@ uv pip install -e ".[dev]"
   "neo4j": {
     "command": "uv",
     "args": [
-      "--directory", "parent_of_servers_repo/servers/mcp-neo4j-cypher/src",
-      "run", "mcp-neo4j-cypher", "--transport", "stdio", "--namespace", "dev"],
+      "--directory", 
+      "parent_of_servers_repo/servers/mcp-neo4j-cypher/src",
+      "run", 
+      "mcp-neo4j-cypher", 
+      "--transport", 
+      "stdio", 
+      "--namespace", 
+      "dev",
+    ],
     "env": {
       "NEO4J_URI": "bolt://localhost",
       "NEO4J_USERNAME": "neo4j",
@@ -233,21 +379,7 @@ uv pip install -e ".[dev]"
 }
 ```
 
-### 🐳 Docker
 
-Build and run the Docker container:
-
-```bash
-# Build the image
-docker build -t mcp/neo4j-cypher:latest .
-
-# Run the container
-docker run -e NEO4J_URI="bolt://host.docker.internal:7687" \
-          -e NEO4J_USERNAME="neo4j" \
-          -e NEO4J_PASSWORD="your-password" \
-          -e NEO4J_NAMESPACE="mydb" \
-          mcp/neo4j-cypher:latest
-```
 
 ## 📄 License
 

@@ -19,9 +19,15 @@ COPY README.md /app/
 RUN pip install --no-cache-dir -e .
 
 # Environment variables for Neo4j connection
-ENV NEO4J_URL="bolt://host.docker.internal:7687"
+ENV NEO4J_URI="bolt://host.docker.internal:7687"
 ENV NEO4J_USERNAME="neo4j"
 ENV NEO4J_PASSWORD="password"
+ENV NEO4J_DATABASE="neo4j"
+ENV NEO4J_TRANSPORT="sse"
+ENV NEO4J_MCP_SERVER_HOST="0.0.0.0"
+ENV NEO4J_MCP_SERVER_PORT="8000"
+
+EXPOSE 8000
 
 # Command to run the server using the package entry point
-CMD ["sh", "-c", "mcp-neo4j-cypher --db-url ${NEO4J_URL} --username ${NEO4J_USERNAME} --password ${NEO4J_PASSWORD}"]
+CMD ["mcp-neo4j-cypher"]
