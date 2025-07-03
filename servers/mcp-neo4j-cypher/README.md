@@ -49,7 +49,7 @@ Add the server to your `claude_desktop_config.json` with the database connection
 "mcpServers": {
   "neo4j-aura": {
     "command": "uvx",
-    "args": [ "mcp-neo4j-cypher@0.2.3", "--transport", "stdio"  ],
+    "args": [ "mcp-neo4j-cypher@0.2.4", "--transport", "stdio"  ],
     "env": {
       "NEO4J_URI": "bolt://localhost:7687",
       "NEO4J_USERNAME": "neo4j",
@@ -69,7 +69,7 @@ Here's an example of connecting to multiple Neo4j databases using namespaces:
   "mcpServers": {
     "movies-neo4j": {
       "command": "uvx",
-      "args": [ "mcp-neo4j-cypher@0.2.3", "--namespace", "movies" ],
+      "args": [ "mcp-neo4j-cypher@0.2.4", "--namespace", "movies" ],
       "env": {
         "NEO4J_URI": "neo4j+s://demo.neo4jlabs.com",
         "NEO4J_USERNAME": "recommendations",
@@ -79,7 +79,7 @@ Here's an example of connecting to multiple Neo4j databases using namespaces:
     },
     "local-neo4j": {
       "command": "uvx",
-      "args": [ "mcp-neo4j-cypher@0.2.3" ],
+      "args": [ "mcp-neo4j-cypher@0.2.4" ],
       "env": {
         "NEO4J_URI": "bolt://localhost:7687",
         "NEO4J_USERNAME": "neo4j",
@@ -103,7 +103,7 @@ Here is an example connection for the movie database with Movie, Person (Actor, 
   "mcpServers": {
     "movies-neo4j": {
       "command": "uvx",
-      "args": [ "mcp-neo4j-cypher@0.2.3" ],
+      "args": [ "mcp-neo4j-cypher@0.2.4" ],
       "env": {
         "NEO4J_URI": "neo4j+s://demo.neo4jlabs.com",
         "NEO4J_USERNAME": "recommendations",
@@ -125,7 +125,7 @@ Syntax with `--db-url`, `--username`, `--password` and other command line argume
   "neo4j": {
     "command": "uvx",
     "args": [
-      "mcp-neo4j-cypher@0.2.3",
+      "mcp-neo4j-cypher@0.2.4",
       "--db-url",
       "bolt://localhost",
       "--username",
@@ -152,7 +152,7 @@ Here is an example connection for the movie database with Movie, Person (Actor, 
   "mcpServers": {
     "movies-neo4j": {
       "command": "uvx",
-      "args": ["mcp-neo4j-cypher@0.2.3", 
+      "args": ["mcp-neo4j-cypher@0.2.4", 
       "--db-url", "neo4j+s://demo.neo4jlabs.com", 
       "--user", "recommendations", 
       "--password", "recommendations",
