@@ -5,6 +5,7 @@
 ### Changed
 
 ### Added
+* Add .dxt file for Cypher MCP server
 
 ## v0.2.4
 
