@@ -1,11 +1,13 @@
 ## Next
 
 ### Fixed
+* Fixed Cypher MCP Docker deployments by allowing user to declare NEO4J_MCP_SERVER_HOST and NEO4J_MCP_SERVER_PORT. Can now declare NEO4J_MCP_SERVER_HOST=0.0.0.0 to use Docker hosted Cypher MCP server.
 
 ### Changed
 
 ### Added
-
+* NEO4J_MCP_SERVER_HOST and NEO4J_MCP_SERVER_PORT env variables
+* --server-host and --server-port cli variables
 
 ## v0.2.3
 

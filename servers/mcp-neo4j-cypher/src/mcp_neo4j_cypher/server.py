@@ -49,8 +49,8 @@ def _is_write_query(query: str) -> bool:
     )
 
 
-def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namespace: str = "") -> FastMCP:
-    mcp: FastMCP = FastMCP("mcp-neo4j-cypher", dependencies=["neo4j", "pydantic"])
+def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namespace: str = "", host: str = "127.0.0.1", port: int = 8000) -> FastMCP:
+    mcp: FastMCP = FastMCP("mcp-neo4j-cypher", dependencies=["neo4j", "pydantic"], host=host, port=port)
 
     async def get_neo4j_schema() -> list[types.TextContent]:
         """List all node, their attributes and their relationships to other nodes in the neo4j database.
@@ -150,6 +150,8 @@ async def main(
     database: str,
     transport: Literal["stdio", "sse"] = "stdio",
     namespace: str = "",
+    host: str = "127.0.0.1",
+    port: int = 8000,
 ) -> None:
     logger.info("Starting MCP neo4j Server")
 
@@ -160,15 +162,18 @@ async def main(
             password,
         ),
     )
-
-    mcp = create_mcp_server(neo4j_driver, database, namespace)
+    logger.info("Starting Neo4j Cypher MCP Server...")
+    mcp = create_mcp_server(neo4j_driver, database, namespace, host, port)
 
     match transport:
         case "stdio":
+            logger.info("Running Neo4j Cypher MCP Server with stdio transport...")
             await mcp.run_stdio_async()
         case "sse":
+            logger.info(f"Running Neo4j Cypher MCP Server with SSE transport on {host}:{port}...")
             await mcp.run_sse_async()
         case _:
+            logger.error(f"Invalid transport: {transport} | Must be either 'stdio' or 'sse'")
             raise ValueError(f"Invalid transport: {transport} | Must be either 'stdio' or 'sse'")
 
 
