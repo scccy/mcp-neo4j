@@ -36,7 +36,19 @@ jobs:
       - name: Generate .dxt file
         run: |
           cd servers/mcp-neo4j-cypher/
-          dxt pack
+          
+          # List files to debug
+          echo "Files in directory:"
+          ls -la
+          
+          # Check Python environment
+          echo "Python environment:"
+          uv run which python
+          uv run pip list
+          
+          echo ""
+          echo "Running dxt pack with uv..."
+          uv run dxt pack
 
       - name: Upload .dxt file to release
         env:
