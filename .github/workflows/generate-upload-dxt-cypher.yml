@@ -1,4 +1,4 @@
-name: Generate and Upload DXT File
+name: MCP Neo4jCypher Generate and Upload DXT File
 
 on:
   push:
