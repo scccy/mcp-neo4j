@@ -15,7 +15,7 @@ on:
   workflow_dispatch:  # Allows manual triggering of the workflow
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   release-build:
