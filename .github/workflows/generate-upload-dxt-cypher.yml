@@ -5,11 +5,11 @@ on:
     tags:
       - mcp-neo4j-cypher-v*
   workflow_dispatch:  # Allows manual triggering of the workflow
-      inputs:
-        release_tag:
-          description: 'Release tag to add .dxt file to (e.g., mcp-neo4j-cypher-v1.0.0)'
-          required: true
-          type: string
+    inputs:
+      release_tag:
+        description: 'Release tag to add .dxt file to (e.g., mcp-neo4j-cypher-v1.0.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -19,11 +19,22 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
+      - name: Determine tag name
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG_NAME="${{ github.ref_name }}"
+            echo "Tag from push event: $TAG_NAME"
+          else
+            TAG_NAME="${{ github.event.inputs.release_tag }}"
+            echo "Tag from manual input: $TAG_NAME"
+          fi
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Checkout code at specific tag
         uses: actions/checkout@v4
         with:
-          # For manual runs, checkout the specific tag
-          ref: ${{ github.event.inputs.release_tag || github.event.release.tag_name }}
+          ref: ${{ steps.tag.outputs.tag_name }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -51,29 +62,7 @@ jobs:
       - name: Generate .dxt file
         run: |
           cd servers/mcp-neo4j-cypher/
-          
-          # Debug current directory and files
-          echo "Current working directory:"
-          pwd
-          echo ""
-          echo "All files in directory (including hidden):"
-          ls -la
-          echo ""
-          echo "Searching for manifest files:"
-          find . -name "manifest.json" -type f
-          find . -name "*manifest*" -type f
-          echo ""
-          
-          # List files to debug
-          echo "Files in directory:"
-          ls -la
-          
-          # Check Python environment
-          echo "Python environment:"
-          uv run which python
-          uv run pip list
-          
-          echo ""
+  
           echo "Running dxt pack with uv..."
           uv run dxt pack .
 
@@ -81,8 +70,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Use the input tag for manual runs, or the event tag for automatic runs
-          TAG_NAME="${{ github.event.inputs.release_tag || github.event.release.tag_name }}"
-          gh release upload "$TAG_NAME" \
+          gh release upload "${{ steps.tag.outputs.tag_name }}" \
             servers/mcp-neo4j-cypher/*.dxt \
             --clobber
