@@ -30,8 +30,8 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dxt
-        run: npm install -g dxt
+      - name: Install Anthropic dxt
+        run: npm install -g @anthropic-ai/dxt
 
       - name: Generate .dxt file
         run: |
