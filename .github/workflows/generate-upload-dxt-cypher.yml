@@ -6,10 +6,10 @@ on:
       - mcp-neo4j-cypher-v*
   workflow_dispatch:  # Allows manual triggering of the workflow
       inputs:
-      release_tag:
-        description: 'Release tag to add .dxt file to (e.g., mcp-neo4j-cypher-v1.0.0)'
-        required: true
-        type: string
+        release_tag:
+          description: 'Release tag to add .dxt file to (e.g., mcp-neo4j-cypher-v1.0.0)'
+          required: true
+          type: string
 
 permissions:
   contents: write
