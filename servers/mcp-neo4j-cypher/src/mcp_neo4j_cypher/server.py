@@ -75,11 +75,14 @@ RETURN label, apoc.map.fromPairs(attributes) as attributes, apoc.map.fromPairs(r
 
                 logger.debug(f"Read query returned {len(results_json_str)} rows")
 
-                return [types.TextContent(type="text", text=results_json_str)]
+                return types.CallToolResult(content=[types.TextContent(type="text", text=results_json_str)])
 
         except Exception as e:
             logger.error(f"Database error retrieving schema: {e}")
-            return [types.TextContent(type="text", text=f"Error: {e}")]
+            return types.CallToolResult(
+                isError=True, 
+                content=[types.TextContent(type="text", text=f"Error: {e}")]
+            )
 
     async def read_neo4j_cypher(
         query: str = Field(..., description="The Cypher query to execute."),
@@ -89,22 +92,25 @@ RETURN label, apoc.map.fromPairs(attributes) as attributes, apoc.map.fromPairs(r
     ) -> list[types.TextContent]:
         """Execute a read Cypher query on the neo4j database."""
 
-        if _is_write_query(query):
-            raise ValueError("Only MATCH queries are allowed for read-query")
-
         try:
+            if _is_write_query(query):
+                raise ValueError("Only MATCH queries are allowed for read-query")
+        
             async with neo4j_driver.session(database=database) as session:
                 results_json_str = await session.execute_read(_read, query, params)
 
                 logger.debug(f"Read query returned {len(results_json_str)} rows")
 
-                return [types.TextContent(type="text", text=results_json_str)]
+                return types.CallToolResult(content=[types.TextContent(type="text", text=results_json_str)])
 
         except Exception as e:
             logger.error(f"Database error executing query: {e}\n{query}\n{params}")
-            return [
+            return types.CallToolResult(
+                isError=True, 
+                content=[
                 types.TextContent(type="text", text=f"Error: {e}\n{query}\n{params}")
             ]
+            )
 
     async def write_neo4j_cypher(
         query: str = Field(..., description="The Cypher query to execute."),
@@ -114,10 +120,10 @@ RETURN label, apoc.map.fromPairs(attributes) as attributes, apoc.map.fromPairs(r
     ) -> list[types.TextContent]:
         """Execute a write Cypher query on the neo4j database."""
 
-        if not _is_write_query(query):
-            raise ValueError("Only write queries are allowed for write-query")
-
         try:
+            if not _is_write_query(query):
+                raise ValueError("Only write queries are allowed for write-query")
+        
             async with neo4j_driver.session(database=database) as session:
                 raw_results = await session.execute_write(_write, query, params)
                 counters_json_str = json.dumps(
@@ -126,13 +132,16 @@ RETURN label, apoc.map.fromPairs(attributes) as attributes, apoc.map.fromPairs(r
 
             logger.debug(f"Write query affected {counters_json_str}")
 
-            return [types.TextContent(type="text", text=counters_json_str)]
+            return types.CallToolResult(content=[types.TextContent(type="text", text=counters_json_str)])
 
         except Exception as e:
             logger.error(f"Database error executing query: {e}\n{query}\n{params}")
-            return [
+            return types.CallToolResult(
+                isError=True, 
+                content=[
                 types.TextContent(type="text", text=f"Error: {e}\n{query}\n{params}")
             ]
+            )
 
     namespace_prefix = _format_namespace(namespace)
     
