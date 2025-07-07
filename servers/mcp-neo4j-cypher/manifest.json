@@ -71,9 +71,9 @@
     "neo4j_database": {
       "type": "string",
       "title": "Neo4j Database",
-      "description": "The database to use in Neo4j",
+      "description": "The database to use in Neo4j, defaults to neo4j",
       "default": "neo4j",
-      "required": true,
+      "required": false,
       "sensitive": true
     },
     "neo4j_uri": {
@@ -95,15 +95,15 @@
     "transport": {
       "type": "string",
       "title": "Transport",
-      "description": "The MCP transport",
+      "description": "The MCP transport, defaults to stdio",
       "default": "stdio",
-      "required": true,
+      "required": false,
       "sensitive": false
     },
     "mcp_server_host": {
       "type": "string",
       "title": "MCP Server Host",
-      "description": "The host for the MCP server, if using sse",
+      "description": "The host for the MCP server, if not using stdio. Defaults to 127.0.0.1",
       "default": "127.0.0.1",
       "required": false,
       "sensitive": false
@@ -111,7 +111,7 @@
     "mcp_server_port": {
       "type": "number",
       "title": "MCP Server Port",
-      "description": "The port for the MCP server, if using sse",
+      "description": "The port for the MCP server, if not using stdio. Defaults to 8000",
       "default": 8000,
       "required": false,
       "sensitive": false
