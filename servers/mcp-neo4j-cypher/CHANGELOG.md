@@ -5,6 +5,8 @@
 ### Changed
 
 ### Added
+* Add .dxt file for Cypher MCP server
+* Add .dxt file generation to Cypher MCP Publish GitHub action
 
 ## v0.2.4
 

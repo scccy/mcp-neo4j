@@ -1,0 +1,49 @@
+name: Generate and Upload DXT File
+
+on:
+  push:
+    tags:
+      - mcp-neo4j-cypher-v*
+  workflow_dispatch:  # Allows manual triggering of the workflow
+      inputs:
+      release_tag:
+        description: 'Release tag to add .dxt file to (e.g., mcp-neo4j-cypher-v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  generate-dxt:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # For manual runs, checkout the specific tag
+          ref: ${{ github.event.inputs.release_tag || github.event.release.tag_name }}
+
+      - name: Setup Node.js for dxt
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dxt
+        run: npm install -g dxt
+
+      - name: Generate .dxt file
+        run: |
+          cd servers/mcp-neo4j-cypher/
+          dxt pack
+
+      - name: Upload .dxt file to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Use the input tag for manual runs, or the event tag for automatic runs
+          TAG_NAME="${{ github.event.inputs.release_tag || github.event.release.tag_name }}"
+          gh release upload "$TAG_NAME" \
+            servers/mcp-neo4j-cypher/*.dxt \
+            --clobber
