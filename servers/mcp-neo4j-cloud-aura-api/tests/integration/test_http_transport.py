@@ -6,6 +6,7 @@ import pytest
 import requests
 import time
 from typing import AsyncGenerator, Dict, Any
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +122,64 @@ class TestAuraManagerHTTPTransport:
             # Server might not be fully ready, which is okay for this test
             logger.warning(f"Server connectivity test failed: {e}")
             pass
+
+    @pytest.mark.asyncio
+    async def test_invalid_node_data(self, aura_manager_server):
+        """Test handling of invalid node data."""
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "http://127.0.0.1:8008/mcp/",
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "validate_node",
+                        "arguments": {
+                            "node": {
+                                "invalid_field": "invalid_value"
+                            }
+                        }
+                    }
+                },
+                headers={
+                    "Accept": "application/json, text/event-stream",
+                    "Content-Type": "application/json"
+                }
+            ) as response:
+                result = await parse_sse_response(response)
+                assert response.status == 200
+                # Should return an error or handle gracefully
+                assert "result" in result
+
+    @pytest.mark.asyncio
+    async def test_invalid_data_model(self, aura_manager_server):
+        """Test handling of invalid data model."""
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "http://127.0.0.1:8008/mcp/",
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "validate_data_model",
+                        "arguments": {
+                            "data_model": {
+                                "invalid_field": "invalid_value"
+                            }
+                        }
+                    }
+                },
+                headers={
+                    "Accept": "application/json, text/event-stream",
+                    "Content-Type": "application/json"
+                }
+            ) as response:
+                result = await parse_sse_response(response)
+                assert response.status == 200
+                # Should return an error or handle gracefully
+                assert "result" in result
 
 
 class TestAuraManagerRealAPI:

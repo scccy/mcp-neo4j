@@ -1,13 +1,9 @@
 import asyncio
 import json
-import pytest
-import aiohttp
 import subprocess
-import time
-import uuid
-from typing import AsyncGenerator
-from unittest.mock import patch
 
+import aiohttp
+import pytest
 import pytest_asyncio
 
 from mcp_neo4j_data_modeling.server import create_mcp_server
@@ -16,14 +12,14 @@ from mcp_neo4j_data_modeling.server import create_mcp_server
 async def parse_sse_response(response: aiohttp.ClientResponse) -> dict:
     """Parse Server-Sent Events response from FastMCP 2.0."""
     content = await response.text()
-    lines = content.strip().split('\n')
-    
+    lines = content.strip().split("\n")
+
     # Find the data line that contains the JSON
     for line in lines:
-        if line.startswith('data: '):
+        if line.startswith("data: "):
             json_str = line[6:]  # Remove 'data: ' prefix
             return json.loads(json_str)
-    
+
     raise ValueError("No data line found in SSE response")
 
 
@@ -68,18 +64,32 @@ class TestHTTPEndpoints:
     @pytest_asyncio.fixture
     async def http_server(self):
         """Start the server in HTTP mode."""
-        # Start server process
+        import os
+
+        # Get the current directory - we're already in the server directory
+        server_dir = os.getcwd()
+
+        # Start server process from the correct directory
         process = await asyncio.create_subprocess_exec(
-            "uv", "run", "mcp-neo4j-data-modeling", "--transport", "http", "--host", "127.0.0.1", "--port", "8007",
+            "uv",
+            "run",
+            "mcp-neo4j-data-modeling",
+            "--transport",
+            "http",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8007",
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            cwd=server_dir,
         )
-        
+
         # Wait for server to start
         await asyncio.sleep(3)
-        
+
         yield process
-        
+
         # Cleanup
         try:
             process.terminate()
@@ -93,15 +103,11 @@ class TestHTTPEndpoints:
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 "http://127.0.0.1:8007/mcp/",
-                json={
-                    "jsonrpc": "2.0",
-                    "id": 1,
-                    "method": "tools/list"
-                },
+                json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"},
                 headers={
                     "Accept": "application/json, text/event-stream",
-                    "Content-Type": "application/json"
-                }
+                    "Content-Type": "application/json",
+                },
             ) as response:
                 assert response.status == 200
                 result = await parse_sse_response(response)
@@ -127,19 +133,16 @@ class TestHTTPEndpoints:
                         "arguments": {
                             "node": {
                                 "label": "Person",
-                                "key_property": {
-                                    "name": "name",
-                                    "type": "STRING"
-                                },
-                                "properties": []
+                                "key_property": {"name": "name", "type": "STRING"},
+                                "properties": [],
                             }
-                        }
-                    }
+                        },
+                    },
                 },
                 headers={
                     "Accept": "application/json, text/event-stream",
-                    "Content-Type": "application/json"
-                }
+                    "Content-Type": "application/json",
+                },
             ) as response:
                 assert response.status == 200
                 result = await parse_sse_response(response)
@@ -165,20 +168,20 @@ class TestHTTPEndpoints:
                                         "label": "Person",
                                         "key_property": {
                                             "name": "name",
-                                            "type": "STRING"
+                                            "type": "STRING",
                                         },
-                                        "properties": []
+                                        "properties": [],
                                     }
                                 ],
-                                "relationships": []
+                                "relationships": [],
                             }
-                        }
-                    }
+                        },
+                    },
                 },
                 headers={
                     "Accept": "application/json, text/event-stream",
-                    "Content-Type": "application/json"
-                }
+                    "Content-Type": "application/json",
+                },
             ) as response:
                 assert response.status == 200
                 result = await parse_sse_response(response)
@@ -204,20 +207,20 @@ class TestHTTPEndpoints:
                                         "label": "Person",
                                         "key_property": {
                                             "name": "name",
-                                            "type": "STRING"
+                                            "type": "STRING",
                                         },
-                                        "properties": []
+                                        "properties": [],
                                     }
                                 ],
-                                "relationships": []
+                                "relationships": [],
                             }
-                        }
-                    }
+                        },
+                    },
                 },
                 headers={
                     "Accept": "application/json, text/event-stream",
-                    "Content-Type": "application/json"
-                }
+                    "Content-Type": "application/json",
+                },
             ) as response:
                 assert response.status == 200
                 result = await parse_sse_response(response)
@@ -230,15 +233,11 @@ class TestHTTPEndpoints:
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 "http://127.0.0.1:8007/mcp/",
-                json={
-                    "jsonrpc": "2.0",
-                    "id": 1,
-                    "method": "resources/list"
-                },
+                json={"jsonrpc": "2.0", "id": 1, "method": "resources/list"},
                 headers={
                     "Accept": "application/json, text/event-stream",
-                    "Content-Type": "application/json"
-                }
+                    "Content-Type": "application/json",
+                },
             ) as response:
                 assert response.status == 200
                 result = await parse_sse_response(response)
@@ -252,12 +251,26 @@ class TestErrorHandling:
     @pytest_asyncio.fixture
     async def http_server(self):
         """Start the server in HTTP mode."""
+        import os
+
+        # Get the current directory - we're already in the server directory
+        server_dir = os.getcwd()
+
         process = await asyncio.create_subprocess_exec(
-            "uv", "run", "mcp-neo4j-data-modeling", "--transport", "http", "--host", "127.0.0.1", "--port", "8008",
+            "uv",
+            "run",
+            "mcp-neo4j-data-modeling",
+            "--transport",
+            "http",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8008",
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            cwd=server_dir,
         )
-        
+
         await asyncio.sleep(3)
         yield process
         process.terminate()
@@ -272,8 +285,8 @@ class TestErrorHandling:
                 data="invalid json",
                 headers={
                     "Accept": "application/json, text/event-stream",
-                    "Content-Type": "application/json"
-                }
+                    "Content-Type": "application/json",
+                },
             ) as response:
                 # FastMCP returns 406 for missing Accept header, but with proper headers it should handle invalid JSON
                 assert response.status in [400, 406]
@@ -284,20 +297,18 @@ class TestErrorHandling:
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 "http://127.0.0.1:8008/mcp/",
-                json={
-                    "jsonrpc": "2.0",
-                    "id": 1,
-                    "method": "invalid_method"
-                },
+                json={"jsonrpc": "2.0", "id": 1, "method": "invalid_method"},
                 headers={
                     "Accept": "application/json, text/event-stream",
-                    "Content-Type": "application/json"
-                }
+                    "Content-Type": "application/json",
+                },
             ) as response:
                 result = await parse_sse_response(response)
                 assert response.status == 200
                 # Accept either JSON-RPC error or result with isError
-                assert ("result" in result and result["result"].get("isError", False)) or ("error" in result)
+                assert (
+                    "result" in result and result["result"].get("isError", False)
+                ) or ("error" in result)
 
     @pytest.mark.asyncio
     async def test_invalid_tool_call(self, http_server):
@@ -309,15 +320,12 @@ class TestErrorHandling:
                     "jsonrpc": "2.0",
                     "id": 1,
                     "method": "tools/call",
-                    "params": {
-                        "name": "nonexistent_tool",
-                        "arguments": {}
-                    }
+                    "params": {"name": "nonexistent_tool", "arguments": {}},
                 },
                 headers={
                     "Accept": "application/json, text/event-stream",
-                    "Content-Type": "application/json"
-                }
+                    "Content-Type": "application/json",
+                },
             ) as response:
                 result = await parse_sse_response(response)
                 assert response.status == 200
@@ -337,17 +345,13 @@ class TestErrorHandling:
                     "method": "tools/call",
                     "params": {
                         "name": "validate_node",
-                        "arguments": {
-                            "node": {
-                                "invalid_field": "invalid_value"
-                            }
-                        }
-                    }
+                        "arguments": {"node": {"invalid_field": "invalid_value"}},
+                    },
                 },
                 headers={
                     "Accept": "application/json, text/event-stream",
-                    "Content-Type": "application/json"
-                }
+                    "Content-Type": "application/json",
+                },
             ) as response:
                 result = await parse_sse_response(response)
                 assert response.status == 200
@@ -366,17 +370,13 @@ class TestErrorHandling:
                     "method": "tools/call",
                     "params": {
                         "name": "validate_data_model",
-                        "arguments": {
-                            "data_model": {
-                                "invalid_field": "invalid_value"
-                            }
-                        }
-                    }
+                        "arguments": {"data_model": {"invalid_field": "invalid_value"}},
+                    },
                 },
                 headers={
                     "Accept": "application/json, text/event-stream",
-                    "Content-Type": "application/json"
-                }
+                    "Content-Type": "application/json",
+                },
             ) as response:
                 result = await parse_sse_response(response)
                 assert response.status == 200
@@ -390,50 +390,56 @@ class TestHTTPTransportIntegration:
     @pytest.mark.asyncio
     async def test_full_workflow(self):
         """Test a complete workflow over HTTP transport."""
+        import os
+
+        # Get the current directory - we're already in the server directory
+        server_dir = os.getcwd()
+
         process = await asyncio.create_subprocess_exec(
-            "uv", "run", "mcp-neo4j-data-modeling", "--transport", "http", "--host", "127.0.0.1", "--port", "8009",
+            "uv",
+            "run",
+            "mcp-neo4j-data-modeling",
+            "--transport",
+            "http",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8009",
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            cwd=server_dir,
         )
-        
+
         await asyncio.sleep(3)
-        
+
         try:
             async with aiohttp.ClientSession() as session:
                 # 1. List tools
                 async with session.post(
                     "http://127.0.0.1:8009/mcp/",
-                    json={
-                        "jsonrpc": "2.0",
-                        "id": 1,
-                        "method": "tools/list"
-                    },
+                    json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"},
                     headers={
                         "Accept": "application/json, text/event-stream",
-                        "Content-Type": "application/json"
-                    }
+                        "Content-Type": "application/json",
+                    },
                 ) as response:
                     result = await parse_sse_response(response)
                     assert response.status == 200
                     assert "result" in result
-                
+
                 # 2. List resources
                 async with session.post(
                     "http://127.0.0.1:8009/mcp/",
-                    json={
-                        "jsonrpc": "2.0",
-                        "id": 2,
-                        "method": "resources/list"
-                    },
+                    json={"jsonrpc": "2.0", "id": 2, "method": "resources/list"},
                     headers={
                         "Accept": "application/json, text/event-stream",
-                        "Content-Type": "application/json"
-                    }
+                        "Content-Type": "application/json",
+                    },
                 ) as response:
                     result = await parse_sse_response(response)
                     assert response.status == 200
                     assert "result" in result
-                
+
                 # 3. Validate a node
                 async with session.post(
                     "http://127.0.0.1:8009/mcp/",
@@ -450,22 +456,22 @@ class TestHTTPTransportIntegration:
                                         {
                                             "name": "test_field",
                                             "type": "string",
-                                            "required": True
+                                            "required": True,
                                         }
-                                    ]
+                                    ],
                                 }
-                            }
-                        }
+                            },
+                        },
                     },
                     headers={
                         "Accept": "application/json, text/event-stream",
-                        "Content-Type": "application/json"
-                    }
+                        "Content-Type": "application/json",
+                    },
                 ) as response:
                     result = await parse_sse_response(response)
                     assert response.status == 200
                     assert "result" in result
-                
+
                 # 4. Validate a data model
                 async with session.post(
                     "http://127.0.0.1:8009/mcp/",
@@ -484,25 +490,25 @@ class TestHTTPTransportIntegration:
                                                 {
                                                     "name": "test_field",
                                                     "type": "string",
-                                                    "required": True
+                                                    "required": True,
                                                 }
-                                            ]
+                                            ],
                                         }
                                     ],
-                                    "relationships": []
+                                    "relationships": [],
                                 }
-                            }
-                        }
+                            },
+                        },
                     },
                     headers={
                         "Accept": "application/json, text/event-stream",
-                        "Content-Type": "application/json"
-                    }
+                        "Content-Type": "application/json",
+                    },
                 ) as response:
                     result = await parse_sse_response(response)
                     assert response.status == 200
                     assert "result" in result
-                    
+
         finally:
             process.terminate()
-            await process.wait() 
+            await process.wait()

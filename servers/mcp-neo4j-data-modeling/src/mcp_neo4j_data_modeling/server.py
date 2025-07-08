@@ -18,7 +18,9 @@ logger = logging.getLogger("mcp_neo4j_data_modeling")
 def create_mcp_server() -> FastMCP:
     """Create an MCP server instance for data modeling."""
 
-    mcp: FastMCP = FastMCP("mcp-neo4j-data-modeling", dependencies=["pydantic"], stateless_http=True)
+    mcp: FastMCP = FastMCP(
+        "mcp-neo4j-data-modeling", dependencies=["pydantic"], stateless_http=True
+    )
 
     @mcp.resource("resource://schema/node")
     def node_schema() -> dict[str, Any]:
