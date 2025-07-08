@@ -352,6 +352,7 @@ class TestErrorHandling:
                 result = await parse_sse_response(response)
                 assert response.status == 200
                 # Should return an error or handle gracefully
+                assert "result" in result
 
     @pytest.mark.asyncio
     async def test_invalid_data_model(self, http_server):
@@ -380,6 +381,7 @@ class TestErrorHandling:
                 result = await parse_sse_response(response)
                 assert response.status == 200
                 # Should return an error or handle gracefully
+                assert "result" in result
 
 
 class TestHTTPTransportIntegration:
