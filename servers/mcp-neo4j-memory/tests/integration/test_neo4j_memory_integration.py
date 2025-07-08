@@ -4,26 +4,22 @@ import asyncio
 from neo4j import GraphDatabase
 from mcp_neo4j_memory.server import Neo4jMemory, Entity, Relation, ObservationAddition, ObservationDeletion
 
-@pytest.fixture(scope="function")
-def neo4j_driver():
-    """Create a Neo4j driver using environment variables for connection details."""
+def get_neo4j_driver():
     uri = os.environ.get("NEO4J_URI", "neo4j://localhost:7687")
     user = os.environ.get("NEO4J_USERNAME", "neo4j")
     password = os.environ.get("NEO4J_PASSWORD", "password")
-    
-    driver = GraphDatabase.driver(uri, auth=(user, password))
-    
+    return GraphDatabase.driver(uri, auth=(user, password))
+
+@pytest.fixture(scope="function")
+def neo4j_driver():
+    driver = get_neo4j_driver()
     # Verify connection
     try:
         driver.verify_connectivity()
     except Exception as e:
         pytest.skip(f"Could not connect to Neo4j: {e}")
-    
     yield driver
-    
-    # Clean up test data after tests
     driver.execute_query("MATCH (n:Memory) DETACH DELETE n")
-    
     driver.close()
 
 @pytest.fixture(scope="function")

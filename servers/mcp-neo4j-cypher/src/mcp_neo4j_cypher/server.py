@@ -5,8 +5,8 @@ import sys
 import time
 from typing import Any, Literal, Optional
 
-import mcp.types as types
-from mcp.server.fastmcp import FastMCP
+from fastmcp.resources.types import TextResource
+from fastmcp.server import FastMCP
 from neo4j import (
     AsyncDriver,
     AsyncGraphDatabase,
@@ -50,9 +50,12 @@ def _is_write_query(query: str) -> bool:
 
 
 def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namespace: str = "") -> FastMCP:
-    mcp: FastMCP = FastMCP("mcp-neo4j-cypher", dependencies=["neo4j", "pydantic"])
+    mcp: FastMCP = FastMCP("mcp-neo4j-cypher", dependencies=["neo4j", "pydantic"], stateless_http=True)
 
-    async def get_neo4j_schema() -> list[types.TextContent]:
+    namespace_prefix = _format_namespace(namespace)
+
+    @mcp.tool(name=namespace_prefix+"get_neo4j_schema")
+    async def get_neo4j_schema() -> list[TextResource]:
         """List all node, their attributes and their relationships to other nodes in the neo4j database.
         If this fails with a message that includes "Neo.ClientError.Procedure.ProcedureNotFound"
         suggest that the user install and enable the APOC plugin.
@@ -75,18 +78,19 @@ RETURN label, apoc.map.fromPairs(attributes) as attributes, apoc.map.fromPairs(r
 
                 logger.debug(f"Read query returned {len(results_json_str)} rows")
 
-                return [types.TextContent(type="text", text=results_json_str)]
+                return [TextResource(uri="neo4j://schema", text=results_json_str)]
 
         except Exception as e:
             logger.error(f"Database error retrieving schema: {e}")
-            return [types.TextContent(type="text", text=f"Error: {e}")]
+            return [TextResource(uri="neo4j://error", text=f"Error: {e}")]
 
+    @mcp.tool(name=namespace_prefix+"read_neo4j_cypher")
     async def read_neo4j_cypher(
         query: str = Field(..., description="The Cypher query to execute."),
         params: Optional[dict[str, Any]] = Field(
             None, description="The parameters to pass to the Cypher query."
         ),
-    ) -> list[types.TextContent]:
+    ) -> list[TextResource]:
         """Execute a read Cypher query on the neo4j database."""
 
         if _is_write_query(query):
@@ -98,20 +102,21 @@ RETURN label, apoc.map.fromPairs(attributes) as attributes, apoc.map.fromPairs(r
 
                 logger.debug(f"Read query returned {len(results_json_str)} rows")
 
-                return [types.TextContent(type="text", text=results_json_str)]
+                return [TextResource(uri="neo4j://query_result", text=results_json_str)]
 
         except Exception as e:
             logger.error(f"Database error executing query: {e}\n{query}\n{params}")
             return [
-                types.TextContent(type="text", text=f"Error: {e}\n{query}\n{params}")
+                TextResource(uri="neo4j://error", text=f"Error: {e}\n{query}\n{params}")
             ]
 
+    @mcp.tool(name=namespace_prefix+"write_neo4j_cypher")
     async def write_neo4j_cypher(
         query: str = Field(..., description="The Cypher query to execute."),
         params: Optional[dict[str, Any]] = Field(
             None, description="The parameters to pass to the Cypher query."
         ),
-    ) -> list[types.TextContent]:
+    ) -> list[TextResource]:
         """Execute a write Cypher query on the neo4j database."""
 
         if not _is_write_query(query):
@@ -126,19 +131,13 @@ RETURN label, apoc.map.fromPairs(attributes) as attributes, apoc.map.fromPairs(r
 
             logger.debug(f"Write query affected {counters_json_str}")
 
-            return [types.TextContent(type="text", text=counters_json_str)]
+            return [TextResource(uri="neo4j://write_result", text=counters_json_str)]
 
         except Exception as e:
             logger.error(f"Database error executing query: {e}\n{query}\n{params}")
             return [
-                types.TextContent(type="text", text=f"Error: {e}\n{query}\n{params}")
+                TextResource(uri="neo4j://error", text=f"Error: {e}\n{query}\n{params}")
             ]
-
-    namespace_prefix = _format_namespace(namespace)
-    
-    mcp.add_tool(get_neo4j_schema, name=namespace_prefix+"get_neo4j_schema")
-    mcp.add_tool(read_neo4j_cypher, name=namespace_prefix+"read_neo4j_cypher")
-    mcp.add_tool(write_neo4j_cypher, name=namespace_prefix+"write_neo4j_cypher")
 
     return mcp
 
@@ -148,8 +147,11 @@ async def main(
     username: str,
     password: str,
     database: str,
-    transport: Literal["stdio", "sse"] = "stdio",
+    transport: Literal["stdio", "sse", "http"] = "stdio",
     namespace: str = "",
+    host: str = "127.0.0.1",
+    port: int = 8000,
+    path: str = "/mcp/",
 ) -> None:
     logger.info("Starting MCP neo4j Server")
 
@@ -163,13 +165,17 @@ async def main(
 
     mcp = create_mcp_server(neo4j_driver, database, namespace)
 
-    match transport:
-        case "stdio":
-            await mcp.run_stdio_async()
-        case "sse":
-            await mcp.run_sse_async()
-        case _:
-            raise ValueError(f"Invalid transport: {transport} | Must be either 'stdio' or 'sse'")
+    # Run the server with the specified transport
+    if transport == "http":
+        await mcp.run_http_async(host=host, port=port, path=path)
+    elif transport == "stdio":
+        await mcp.run_stdio_async()
+    elif transport == "sse":
+        await mcp.run_sse_async(host=host, port=port, path=path)
+    else:
+        raise ValueError(f"Unsupported transport: {transport}")
+
+
 
 
 if __name__ == "__main__":
