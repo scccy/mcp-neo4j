@@ -14,6 +14,20 @@ from neo4j import AsyncGraphDatabase
 from testcontainers.neo4j import Neo4jContainer
 
 
+async def parse_sse_response(response: aiohttp.ClientResponse) -> dict:
+    """Parse Server-Sent Events response from FastMCP 2.0."""
+    content = await response.text()
+    lines = content.strip().split('\n')
+    
+    # Find the data line that contains the JSON
+    for line in lines:
+        if line.startswith('data: '):
+            json_str = line[6:]  # Remove 'data: ' prefix
+            return json.loads(json_str)
+    
+    raise ValueError("No data line found in SSE response")
+
+
 @pytest.fixture(scope="module")
 def neo4j_container():
     """Start a Neo4j container for testing."""
@@ -94,13 +108,9 @@ class TestHTTPTransport:
                 print(f"Response headers: {dict(response.headers)}")
                 response_text = await response.text()
                 print(f"Response text: {response_text}")
-                try:
-                    result = await response.json()
-                    print(f"Response JSON: {result}")
-                except Exception as e:
-                    print(f"Failed to parse JSON: {e}")
-                    result = None
+                
                 assert response.status == 200
+                result = await parse_sse_response(response)
                 assert "result" in result
                 assert "tools" in result["result"]
                 tools = result["result"]["tools"]
@@ -127,7 +137,7 @@ class TestHTTPTransport:
                 },
                 headers={"Accept": "application/json, text/event-stream", "Content-Type": "application/json", "mcp-session-id": "test-session"}
             ) as response:
-                result = await response.json()
+                result = await parse_sse_response(response)
                 assert response.status == 200
                 assert "result" in result
                 assert "content" in result["result"]
@@ -152,7 +162,7 @@ class TestHTTPTransport:
                 },
                 headers={"Accept": "application/json, text/event-stream", "Content-Type": "application/json", "mcp-session-id": "test-session"}
             ) as response:
-                result = await response.json()
+                result = await parse_sse_response(response)
                 assert response.status == 200
                 assert "result" in result
                 assert "content" in result["result"]
@@ -176,7 +186,7 @@ class TestHTTPTransport:
                 },
                 headers={"Accept": "application/json, text/event-stream", "Content-Type": "application/json", "mcp-session-id": "test-session"}
             ) as response:
-                result = await response.json()
+                result = await parse_sse_response(response)
                 assert response.status == 200
                 assert "result" in result
                 assert "content" in result["result"]
@@ -194,9 +204,10 @@ class TestHTTPTransport:
                 },
                 headers={"Accept": "application/json, text/event-stream", "Content-Type": "application/json", "mcp-session-id": "test-session"}
             ) as response:
-                result = await response.json()
+                result = await parse_sse_response(response)
                 assert response.status == 200
-                assert "error" in result
+                # Accept either JSON-RPC error or result with isError
+                assert ("result" in result and result["result"].get("isError", False)) or ("error" in result)
 
     @pytest.mark.asyncio
     async def test_http_invalid_tool(self, http_server):
@@ -215,9 +226,11 @@ class TestHTTPTransport:
                 },
                 headers={"Accept": "application/json, text/event-stream", "Content-Type": "application/json", "mcp-session-id": "test-session"}
             ) as response:
-                result = await response.json()
+                result = await parse_sse_response(response)
                 assert response.status == 200
-                assert "error" in result
+                # FastMCP returns errors in result field with isError: True
+                assert "result" in result
+                assert result["result"].get("isError", False)
 
 
 class TestSSETransport:
@@ -353,7 +366,7 @@ class TestTransportIntegration:
                     },
                     headers={"Accept": "application/json, text/event-stream", "Content-Type": "application/json", "mcp-session-id": "test-session"}
                 ) as response:
-                    result = await response.json()
+                    result = await parse_sse_response(response)
                     assert response.status == 200
                     assert "result" in result
 
@@ -373,7 +386,7 @@ class TestTransportIntegration:
                     },
                     headers={"Accept": "application/json, text/event-stream", "Content-Type": "application/json", "mcp-session-id": "test-session"}
                 ) as response:
-                    result = await response.json()
+                    result = await parse_sse_response(response)
                     assert response.status == 200
                     assert "result" in result
 
@@ -393,7 +406,7 @@ class TestTransportIntegration:
                     },
                     headers={"Accept": "application/json, text/event-stream", "Content-Type": "application/json", "mcp-session-id": "test-session"}
                 ) as response:
-                    result = await response.json()
+                    result = await parse_sse_response(response)
                     assert response.status == 200
                     assert "result" in result
 
