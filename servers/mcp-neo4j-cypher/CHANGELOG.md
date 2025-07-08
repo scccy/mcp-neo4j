@@ -3,16 +3,27 @@
 ### Fixed
 
 ### Changed
+* Update error handling in read and write tools
 
 ### Added
+* Add .dxt file for Cypher MCP server
+* Add .dxt file generation to Cypher MCP Publish GitHub action
+* Add error indicator to tool results in the `CallToolResult` object
 
+## v0.2.4
+
+### Fixed
+* Fixed Cypher MCP Docker deployments by allowing user to declare NEO4J_MCP_SERVER_HOST and NEO4J_MCP_SERVER_PORT. Can now declare NEO4J_MCP_SERVER_HOST=0.0.0.0 to use Docker hosted Cypher MCP server.
+
+### Added
+* NEO4J_MCP_SERVER_HOST and NEO4J_MCP_SERVER_PORT env variables
+* --server-host and --server-port cli variables
 
 ## v0.2.3
 
 ### Added
 * Namespace option via CLI or env variables. This allows many Cypher MCP servers to be used at once.
 * Allow transport to be specified via env variables
-
 
 ## v0.2.2 
 

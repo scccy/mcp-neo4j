@@ -17,6 +17,8 @@ def main():
     parser.add_argument("--host", default=None, help="HTTP host (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=None, help="HTTP port (default: 8000)")
     parser.add_argument("--path", default=None, help="HTTP path (default: /mcp/)")
+    parser.add_argument("--server-host", default=None, help="Server host")
+    parser.add_argument("--server-port", default=None, help="Server port")
 
     args = parser.parse_args()
     asyncio.run(
