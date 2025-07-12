@@ -44,17 +44,18 @@ class Neo4jMemory:
 
     async def create_fulltext_index(self):
         """Create a fulltext search index for entities if it doesn't exist."""
-        async with self.driver.session() as session:
-            try:
-                await session.run("""
-                    CALL db.index.fulltext.createNodeIndex("entity_search", ["Entity"], ["name", "type", "observations"])
-                """)
-            except Exception as e:
-                # Index might already exist, which is fine
-                logger.debug(f"Fulltext index creation: {e}")
+        try:
+            await self.driver.execute_query("""
+                CALL db.index.fulltext.createNodeIndex("entity_search", ["Entity"], ["name", "type", "observations"])
+            """)
+            logger.info("Created fulltext search index")
+        except Exception as e:
+            # Index might already exist, which is fine
+            logger.debug(f"Fulltext index creation: {e}")
 
     async def load_graph(self, filter_query="*"):
         """Load the entire knowledge graph from Neo4j."""
+        logger.info("Loading knowledge graph from Neo4j")
         async with self.driver.session() as session:
             # Load all entities
             entity_result = await session.run("""
@@ -65,9 +66,9 @@ class Neo4jMemory:
             entities = []
             async for record in entity_result:
                 entities.append(Entity(
-                    name=record["name"],
-                    type=record["type"],
-                    observations=record["observations"] if record["observations"] else []
+                    name=record.get("name", ""),
+                    type=record.get("type", ""),
+                    observations=record.get("observations") or []
                 ))
             
             # Load all relations
@@ -79,25 +80,30 @@ class Neo4jMemory:
             relations = []
             async for record in relation_result:
                 relations.append(Relation(
-                    source=record["source"],
-                    target=record["target"],
-                    relationType=record["relationType"]
+                    source=record.get("source", ""),
+                    target=record.get("target", ""),
+                    relationType=record.get("relationType", "")
                 ))
+            
+            logger.info(f"Loaded {len(entities)} entities and {len(relations)} relations")
             
             return KnowledgeGraph(entities=entities, relations=relations)
 
     async def create_entities(self, entities: List[Entity]) -> List[Entity]:
         """Create multiple new entities in the knowledge graph."""
+        logger.info(f"Creating {len(entities)} entities")
         async with self.driver.session() as session:
             for entity in entities:
                 await session.run("""
                     MERGE (e:Entity {name: $name})
                     SET e.type = $type, e.observations = $observations
                 """, name=entity.name, type=entity.type, observations=entity.observations)
+            logger.info(f"Successfully created {len(entities)} entities")
             return entities
 
     async def create_relations(self, relations: List[Relation]) -> List[Relation]:
         """Create multiple new relations between entities."""
+        logger.info(f"Creating {len(relations)} relations")
         async with self.driver.session() as session:
             for relation in relations:
                 await session.run("""
@@ -106,10 +112,12 @@ class Neo4jMemory:
                     MERGE (source)-[r:RELATION]->(target)
                     SET r.relationType = $relationType
                 """, source=relation.source, target=relation.target, relationType=relation.relationType)
+            logger.info(f"Successfully created {len(relations)} relations")
             return relations
 
     async def add_observations(self, observations: List[ObservationAddition]) -> List[Dict[str, Any]]:
         """Add new observations to existing entities."""
+        logger.info(f"Adding observations to {len(observations)} entities")
         results = []
         async with self.driver.session() as session:
             for obs in observations:
@@ -121,34 +129,41 @@ class Neo4jMemory:
                     END
                 """, entityName=obs.entityName, contents=obs.contents)
                 results.append({"entity": obs.entityName, "added_observations": obs.contents})
+        logger.info(f"Successfully added observations to {len(observations)} entities")
         return results
 
     async def delete_entities(self, entity_names: List[str]) -> None:
         """Delete multiple entities and their associated relations."""
+        logger.info(f"Deleting {len(entity_names)} entities")
         async with self.driver.session() as session:
             await session.run("""
                 MATCH (e:Entity)
                 WHERE e.name IN $entityNames
                 DETACH DELETE e
             """, entityNames=entity_names)
+        logger.info(f"Successfully deleted {len(entity_names)} entities")
 
     async def delete_observations(self, deletions: List[ObservationDeletion]) -> None:
         """Delete specific observations from entities."""
+        logger.info(f"Deleting observations from {len(deletions)} entities")
         async with self.driver.session() as session:
             for deletion in deletions:
                 await session.run("""
                     MATCH (e:Entity {name: $entityName})
                     SET e.observations = [obs IN e.observations WHERE NOT obs IN $observations]
                 """, entityName=deletion.entityName, observations=deletion.observations)
+        logger.info(f"Successfully deleted observations from {len(deletions)} entities")
 
     async def delete_relations(self, relations: List[Relation]) -> None:
         """Delete multiple relations from the graph."""
+        logger.info(f"Deleting {len(relations)} relations")
         async with self.driver.session() as session:
             for relation in relations:
                 await session.run("""
                     MATCH (source:Entity {name: $source})-[r:RELATION]->(target:Entity {name: $target})
                     DELETE r
                 """, source=relation.source, target=relation.target)
+        logger.info(f"Successfully deleted {len(relations)} relations")
 
     async def read_graph(self) -> KnowledgeGraph:
         """Read the entire knowledge graph."""
@@ -156,6 +171,7 @@ class Neo4jMemory:
 
     async def search_nodes(self, query: str) -> KnowledgeGraph:
         """Search for nodes based on a query."""
+        logger.info(f"Searching for nodes with query: '{query}'")
         async with self.driver.session() as session:
             # Use fulltext search if available, otherwise fallback to simple text search
             try:
@@ -164,6 +180,7 @@ class Neo4jMemory:
                     YIELD node
                     RETURN node.name as name, node.type as type, node.observations as observations
                 """, query=query)
+                logger.debug("Using fulltext search index")
             except:
                 # Fallback to simple text search
                 result = await session.run("""
@@ -171,13 +188,14 @@ class Neo4jMemory:
                     WHERE e.name CONTAINS $query OR e.type CONTAINS $query OR ANY(obs IN e.observations WHERE obs CONTAINS $query)
                     RETURN e.name as name, e.type as type, e.observations as observations
                 """, query=query)
+                logger.debug("Using fallback text search")
             
             entities = []
             async for record in result:
                 entities.append(Entity(
-                    name=record["name"],
-                    type=record["type"],
-                    observations=record["observations"] if record["observations"] else []
+                    name=record.get("name", ""),
+                    type=record.get("type", ""),
+                    observations=record.get("observations") or []
                 ))
             
             # Get relations for found entities
@@ -192,17 +210,19 @@ class Neo4jMemory:
                 relations = []
                 async for record in relation_result:
                     relations.append(Relation(
-                        source=record["source"],
-                        target=record["target"],
-                        relationType=record["relationType"]
+                        source=record.get("source", ""),
+                        target=record.get("target", ""),
+                        relationType=record.get("relationType", "")
                     ))
             else:
                 relations = []
             
+            logger.info(f"Search found {len(entities)} entities and {len(relations)} relations")
             return KnowledgeGraph(entities=entities, relations=relations)
 
     async def find_nodes(self, names: List[str]) -> KnowledgeGraph:
         """Find specific nodes by their names."""
+        logger.info(f"Finding {len(names)} nodes by name")
         async with self.driver.session() as session:
             # Load specified entities
             entity_result = await session.run("""
@@ -214,9 +234,9 @@ class Neo4jMemory:
             entities = []
             async for record in entity_result:
                 entities.append(Entity(
-                    name=record["name"],
-                    type=record["type"],
-                    observations=record["observations"] if record["observations"] else []
+                    name=record.get("name", ""),
+                    type=record.get("type", ""),
+                    observations=record.get("observations") or []
                 ))
             
             # Get relations for found entities
@@ -230,13 +250,14 @@ class Neo4jMemory:
                 relations = []
                 async for record in relation_result:
                     relations.append(Relation(
-                        source=record["source"],
-                        target=record["target"],
-                        relationType=record["relationType"]
+                        source=record.get("source", ""),
+                        target=record.get("target", ""),
+                        relationType=record.get("relationType", "")
                     ))
             else:
                 relations = []
             
+            logger.info(f"Found {len(entities)} entities and {len(relations)} relations")
             return KnowledgeGraph(entities=entities, relations=relations)
 
 
@@ -246,69 +267,79 @@ def create_mcp_server(neo4j_driver, memory: Neo4jMemory) -> FastMCP:
     mcp: FastMCP = FastMCP("mcp-neo4j-memory", dependencies=["neo4j", "pydantic"], stateless_http=True)
 
     @mcp.tool()
-    async def read_graph() -> list[TextResource]:
+    async def read_graph() -> dict:
         """Read the entire knowledge graph."""
+        logger.info("MCP tool: read_graph")
         result = await memory.read_graph()
-        return [TextResource(uri="neo4j://graph", text=json.dumps(result.model_dump(), indent=2))]
+        return result.model_dump()
 
     @mcp.tool()
-    async def create_entities(entities: List[Dict[str, Any]] = Field(..., description="List of entities to create")) -> list[TextResource]:
+    async def create_entities(entities: List[Dict[str, Any]] = Field(..., description="List of entities to create")) -> list[dict]:
         """Create multiple new entities in the knowledge graph."""
+        logger.info(f"MCP tool: create_entities ({len(entities)} entities)")
         entity_objects = [Entity(**entity) for entity in entities]
         result = await memory.create_entities(entity_objects)
-        return [TextResource(uri="neo4j://entities", text=json.dumps([e.model_dump() for e in result], indent=2))]
+        return [e.model_dump() for e in result]
 
     @mcp.tool()
-    async def create_relations(relations: List[Dict[str, Any]] = Field(..., description="List of relations to create")) -> list[TextResource]:
+    async def create_relations(relations: List[Dict[str, Any]] = Field(..., description="List of relations to create")) -> list[dict]:
         """Create multiple new relations between entities."""
+        logger.info(f"MCP tool: create_relations ({len(relations)} relations)")
         relation_objects = [Relation(**relation) for relation in relations]
         result = await memory.create_relations(relation_objects)
-        return [TextResource(uri="neo4j://relations", text=json.dumps([r.model_dump() for r in result], indent=2))]
+        return [r.model_dump() for r in result]
 
     @mcp.tool()
-    async def add_observations(observations: List[Dict[str, Any]] = Field(..., description="List of observations to add")) -> list[TextResource]:
+    async def add_observations(observations: List[Dict[str, Any]] = Field(..., description="List of observations to add")) -> list[dict]:
         """Add new observations to existing entities."""
+        logger.info(f"MCP tool: add_observations ({len(observations)} additions)")
         observation_objects = [ObservationAddition(**obs) for obs in observations]
         result = await memory.add_observations(observation_objects)
-        return [TextResource(uri="neo4j://observations", text=json.dumps(result, indent=2))]
+        return result
 
     @mcp.tool()
-    async def delete_entities(entityNames: List[str] = Field(..., description="List of entity names to delete")) -> list[TextResource]:
+    async def delete_entities(entityNames: List[str] = Field(..., description="List of entity names to delete")) -> str:
         """Delete multiple entities and their associated relations."""
+        logger.info(f"MCP tool: delete_entities ({len(entityNames)} entities)")
         await memory.delete_entities(entityNames)
-        return [TextResource(uri="neo4j://deleted", text="Entities deleted successfully")]
+        return "Entities deleted successfully"
 
     @mcp.tool()
-    async def delete_observations(deletions: List[Dict[str, Any]] = Field(..., description="List of observations to delete")) -> list[TextResource]:
+    async def delete_observations(deletions: List[Dict[str, Any]] = Field(..., description="List of observations to delete")) -> str:
         """Delete specific observations from entities."""
+        logger.info(f"MCP tool: delete_observations ({len(deletions)} deletions)")
         deletion_objects = [ObservationDeletion(**deletion) for deletion in deletions]
         await memory.delete_observations(deletion_objects)
-        return [TextResource(uri="neo4j://deleted", text="Observations deleted successfully")]
+        return "Observations deleted successfully"
 
     @mcp.tool()
-    async def delete_relations(relations: List[Dict[str, Any]] = Field(..., description="List of relations to delete")) -> list[TextResource]:
+    async def delete_relations(relations: List[Dict[str, Any]] = Field(..., description="List of relations to delete")) -> str:
         """Delete multiple relations from the graph."""
+        logger.info(f"MCP tool: delete_relations ({len(relations)} relations)")
         relation_objects = [Relation(**relation) for relation in relations]
         await memory.delete_relations(relation_objects)
-        return [TextResource(uri="neo4j://deleted", text="Relations deleted successfully")]
+        return "Relations deleted successfully"
 
     @mcp.tool()
-    async def search_nodes(query: str = Field(..., description="Search query for nodes")) -> list[TextResource]:
+    async def search_nodes(query: str = Field(..., description="Search query for nodes")) -> dict:
         """Search for nodes based on a query."""
+        logger.info(f"MCP tool: search_nodes ('{query}')")
         result = await memory.search_nodes(query)
-        return [TextResource(uri="neo4j://search", text=json.dumps(result.model_dump(), indent=2))]
+        return result.model_dump()
 
     @mcp.tool()
-    async def find_nodes(names: List[str] = Field(..., description="List of node names to find")) -> list[TextResource]:
+    async def find_nodes(names: List[str] = Field(..., description="List of node names to find")) -> dict:
         """Find specific nodes by name."""
+        logger.info(f"MCP tool: find_nodes ({len(names)} names)")
         result = await memory.find_nodes(names)
-        return [TextResource(uri="neo4j://nodes", text=json.dumps(result.model_dump(), indent=2))]
+        return result.model_dump()
 
     @mcp.tool()
-    async def open_nodes(names: List[str] = Field(..., description="List of node names to open")) -> list[TextResource]:
+    async def open_nodes(names: List[str] = Field(..., description="List of node names to open")) -> dict:
         """Open specific nodes by name (alias for find_nodes)."""
+        logger.info(f"MCP tool: open_nodes ({len(names)} names)")
         result = await memory.find_nodes(names)
-        return [TextResource(uri="neo4j://nodes", text=json.dumps(result.model_dump(), indent=2))]
+        return result.model_dump()
 
     return mcp
 
@@ -323,7 +354,8 @@ async def main(
     port: int = 8000,
     path: str = "/mcp/",
 ) -> None:
-    logger.info(f"Connecting to neo4j MCP Server with DB URL: {neo4j_uri}")
+    logger.info(f"Starting Neo4j MCP Memory Server")
+    logger.info(f"Connecting to Neo4j with DB URL: {neo4j_uri}")
 
     # Connect to Neo4j
     neo4j_driver = AsyncGraphDatabase.driver(
@@ -342,19 +374,25 @@ async def main(
 
     # Initialize memory
     memory = Neo4jMemory(neo4j_driver)
+    logger.info("Neo4jMemory initialized")
     
     # Create fulltext index
     await memory.create_fulltext_index()
     
     # Create MCP server
     mcp = create_mcp_server(neo4j_driver, memory)
+    logger.info("MCP server created")
 
     # Run the server with the specified transport
+    logger.info(f"Starting server with transport: {transport}")
     if transport == "http":
+        logger.info(f"HTTP server starting on {host}:{port}{path}")
         await mcp.run_http_async(host=host, port=port, path=path)
     elif transport == "stdio":
+        logger.info("STDIO server starting")
         await mcp.run_stdio_async()
     elif transport == "sse":
+        logger.info(f"SSE server starting on {host}:{port}{path}")
         await mcp.run_sse_async(host=host, port=port, path=path)
     else:
         raise ValueError(f"Unsupported transport: {transport}")

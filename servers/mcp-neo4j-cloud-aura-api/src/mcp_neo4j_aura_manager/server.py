@@ -243,7 +243,9 @@ class AuraAPIClient:
         if vector_optimized is not None:
             payload["vector_optimized"] = str(vector_optimized).lower()
         
-        if payload["vector_optimized"] == "true" and int(payload["memory"]) < 4:
+        # Validate vector optimization requirements only if both memory and vector_optimized are being updated
+        if (memory is not None and vector_optimized is not None and 
+            vector_optimized and memory < 4):
             raise ValueError("vector optimized instances must have at least 4GB memory")
         
         url = f"{self.BASE_URL}/instances/{instance_id}"
@@ -419,22 +421,22 @@ def create_mcp_server(aura_manager: AuraManager) -> FastMCP:
     mcp: FastMCP = FastMCP("mcp-neo4j-aura-manager", dependencies=["requests", "pydantic"], stateless_http=True)
 
     @mcp.tool()
-    async def list_instances() -> str:
+    async def list_instances() -> dict:
         """List all Neo4j Aura database instances."""
         result = await aura_manager.list_instances()
-        return json.dumps(result, indent=2)
+        return result
 
     @mcp.tool()
-    async def get_instance_details(instance_ids: List[str]) -> str:
+    async def get_instance_details(instance_ids: List[str]) -> dict:
         """Get details for one or more Neo4j Aura instances by ID."""
         result = await aura_manager.get_instance_details(instance_ids)
-        return json.dumps(result, indent=2)
+        return result
 
     @mcp.tool()
-    async def get_instance_by_name(name: str) -> str:
+    async def get_instance_by_name(name: str) -> dict:
         """Find a Neo4j Aura instance by name and returns the details including the id."""
         result = await aura_manager.get_instance_by_name(name)
-        return json.dumps(result, indent=2)
+        return result
 
     @mcp.tool()
     async def create_instance(
@@ -447,7 +449,7 @@ def create_mcp_server(aura_manager: AuraManager) -> FastMCP:
         cloud_provider: str = Field("gcp", description="Cloud provider (gcp, aws, azure)"),
         graph_analytics_plugin: bool = Field(False, description="Whether to enable the graph analytics plugin"),
         source_instance_id: Optional[str] = Field(None, description="ID of the source instance to clone from")
-    ) -> str:
+    ) -> dict:
         """Create a new Neo4j Aura database instance."""
         result = await aura_manager.create_instance(
             tenant_id=tenant_id,
@@ -460,55 +462,55 @@ def create_mcp_server(aura_manager: AuraManager) -> FastMCP:
             graph_analytics_plugin=graph_analytics_plugin,
             source_instance_id=source_instance_id
         )
-        return json.dumps(result, indent=2)
+        return result
 
     @mcp.tool()
-    async def update_instance_name(instance_id: str, name: str) -> str:
+    async def update_instance_name(instance_id: str, name: str) -> dict:
         """Update the name of a Neo4j Aura instance."""
         result = await aura_manager.update_instance_name(instance_id, name)
-        return json.dumps(result, indent=2)
+        return result
 
     @mcp.tool()
-    async def update_instance_memory(instance_id: str, memory: int) -> str:
+    async def update_instance_memory(instance_id: str, memory: int) -> dict:
         """Update the memory allocation of a Neo4j Aura instance."""
         result = await aura_manager.update_instance_memory(instance_id, memory)
-        return json.dumps(result, indent=2)
+        return result
 
     @mcp.tool()
-    async def update_instance_vector_optimization(instance_id: str, vector_optimized: bool) -> str:
+    async def update_instance_vector_optimization(instance_id: str, vector_optimized: bool) -> dict:
         """Update the vector optimization setting of a Neo4j Aura instance."""
         result = await aura_manager.update_instance_vector_optimization(instance_id, vector_optimized)
-        return json.dumps(result, indent=2)
+        return result
 
     @mcp.tool()
-    async def pause_instance(instance_id: str) -> str:
+    async def pause_instance(instance_id: str) -> dict:
         """Pause a Neo4j Aura database instance."""
         result = await aura_manager.pause_instance(instance_id)
-        return json.dumps(result, indent=2)
+        return result
 
     @mcp.tool()
-    async def resume_instance(instance_id: str) -> str:
+    async def resume_instance(instance_id: str) -> dict:
         """Resume a paused Neo4j Aura database instance."""
         result = await aura_manager.resume_instance(instance_id)
-        return json.dumps(result, indent=2)
+        return result
 
     @mcp.tool()
-    async def list_tenants() -> str:
+    async def list_tenants() -> dict:
         """List all Neo4j Aura tenants/projects."""
         result = await aura_manager.list_tenants()
-        return json.dumps(result, indent=2)
+        return result
 
     @mcp.tool()
-    async def get_tenant_details(tenant_id: str) -> str:
+    async def get_tenant_details(tenant_id: str) -> dict:
         """Get details for a specific Neo4j Aura tenant/project."""
         result = await aura_manager.get_tenant_details(tenant_id)
-        return json.dumps(result, indent=2)
+        return result
 
     @mcp.tool()
-    async def delete_instance(instance_id: str) -> str:
+    async def delete_instance(instance_id: str) -> dict:
         """Delete a Neo4j Aura database instance."""
         result = await aura_manager.delete_instance(instance_id)
-        return json.dumps(result, indent=2)
+        return result
 
     return mcp
 
