@@ -62,8 +62,8 @@ class TestHTTPTransport:
         process = await asyncio.create_subprocess_exec(
             "uv", "run", "mcp-neo4j-cypher", 
             "--transport", "http", 
-            "--host", "127.0.0.1", 
-            "--port", "8001",
+            "--server-host", "127.0.0.1", 
+            "--server-port", "8001",
             "--db-url", neo4j_container.get_connection_url(),
             "--username", neo4j_container.username,
             "--password", neo4j_container.password,
@@ -251,8 +251,8 @@ class TestSSETransport:
         process = await asyncio.create_subprocess_exec(
             "uv", "run", "mcp-neo4j-cypher", 
             "--transport", "sse", 
-            "--host", "127.0.0.1", 
-            "--port", "8002",
+            "--server-host", "127.0.0.1", 
+            "--server-port", "8002",
             "--db-url", neo4j_container.get_connection_url(),
             "--username", neo4j_container.username,
             "--password", neo4j_container.password,
@@ -353,8 +353,8 @@ class TestTransportIntegration:
         process = await asyncio.create_subprocess_exec(
             "uv", "run", "mcp-neo4j-cypher", 
             "--transport", "http", 
-            "--host", "127.0.0.1", 
-            "--port", "8003",
+            "--server-host", "127.0.0.1", 
+            "--server-port", "8003",
             "--db-url", neo4j_container.get_connection_url(),
             "--username", neo4j_container.username,
             "--password", neo4j_container.password,
