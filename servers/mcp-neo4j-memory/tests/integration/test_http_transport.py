@@ -118,8 +118,8 @@ class TestHTTPEndpoints:
         process = await asyncio.create_subprocess_exec(
             "uv", "run", "mcp-neo4j-memory", 
             "--transport", "http", 
-            "--host", "127.0.0.1", 
-            "--port", "8004",
+            "--server-host", "127.0.0.1", 
+            "--server-port", "8004",
             "--db-url", neo4j_container.get_connection_url(),
             "--username", neo4j_container.username,
             "--password", neo4j_container.password,
@@ -203,18 +203,13 @@ class TestHTTPEndpoints:
                 assert response.status == 200
                 assert "result" in result
                 assert "content" in result["result"]
-                # Parse the TextResource content
+                # Parse the content
                 content = result["result"]["content"]
                 assert len(content) > 0
-                # FastMCP wraps the response in a text field
-                assert "text" in content[0]
-                # The text field contains a TextResource object, parse it
-                import json
-                text_resource = json.loads(content[0]["text"])
-                assert "text" in text_resource
-                # Parse the actual data from the TextResource
-                actual_data = json.loads(text_resource["text"])
+                # The content contains the actual data directly
+                actual_data = content[0]
                 assert "entities" in actual_data
+                assert "relations" in actual_data
 
     @pytest.mark.asyncio
     async def test_http_create_entities(self, http_server):
@@ -246,19 +241,15 @@ class TestHTTPEndpoints:
                 assert response.status == 200
                 assert "result" in result
                 assert "content" in result["result"]
-                # Parse the TextResource content
+                # Parse the content
                 content = result["result"]["content"]
                 assert len(content) > 0
-                # FastMCP wraps the response in a text field
-                assert "text" in content[0]
-                # The text field contains a TextResource object, parse it
-                import json
-                text_resource = json.loads(content[0]["text"])
-                assert "text" in text_resource
-                # Parse the actual data from the TextResource
-                actual_data = json.loads(text_resource["text"])
-                assert isinstance(actual_data, list)
-                assert len(actual_data) > 0
+                # The content contains the actual data directly
+                actual_data = content[0]
+                assert isinstance(actual_data, dict)
+                assert "name" in actual_data
+                assert "type" in actual_data
+                assert "observations" in actual_data
 
     @pytest.mark.asyncio
     async def test_http_search_nodes(self, http_server):
@@ -284,14 +275,14 @@ class TestHTTPEndpoints:
                 assert response.status == 200
                 assert "result" in result
                 assert "content" in result["result"]
-                # Parse the TextResource content
+                # Parse the content
                 content = result["result"]["content"]
                 assert len(content) > 0
-                # FastMCP wraps the response in a text field
-                assert "text" in content[0]
+                # The content contains the actual data directly
+                actual_data = content[0]
                 # For now, just verify we get a response (the search tool has a parameter conflict)
                 # TODO: Fix the search_nodes tool parameter conflict
-                assert "text" in content[0]
+                assert isinstance(actual_data, dict)
 
 
 class TestErrorHandling:
@@ -309,7 +300,7 @@ class TestErrorHandling:
         })
         
         process = await asyncio.create_subprocess_exec(
-            "uv", "run", "mcp-neo4j-memory", "--transport", "http", "--host", "127.0.0.1", "--port", "8005",
+            "uv", "run", "mcp-neo4j-memory", "--transport", "http", "--server-host", "127.0.0.1", "--server-port", "8005",
             "--db-url", neo4j_container.get_connection_url(),
             "--username", neo4j_container.username,
             "--password", neo4j_container.password,
@@ -423,7 +414,7 @@ class TestHTTPTransportIntegration:
         })
         
         process = await asyncio.create_subprocess_exec(
-            "uv", "run", "mcp-neo4j-memory", "--transport", "http", "--host", "127.0.0.1", "--port", "8006",
+            "uv", "run", "mcp-neo4j-memory", "--transport", "http", "--server-host", "127.0.0.1", "--server-port", "8006",
             "--db-url", neo4j_container.get_connection_url(),
             "--username", neo4j_container.username,
             "--password", neo4j_container.password,
