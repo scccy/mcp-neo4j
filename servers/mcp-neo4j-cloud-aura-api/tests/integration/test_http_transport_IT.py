@@ -10,6 +10,19 @@ import aiohttp
 
 logger = logging.getLogger(__name__)
 
+async def parse_sse_response(response: aiohttp.ClientResponse) -> dict:
+    """Parse Server-Sent Events response from FastMCP 2.0."""
+    content = await response.text()
+    lines = content.strip().split('\n')
+    
+    # Find the data line that contains the JSON
+    for line in lines:
+        if line.startswith('data: '):
+            json_str = line[6:]  # Remove 'data: ' prefix
+            return json.loads(json_str)
+    
+    raise ValueError("No data line found in SSE response")
+    
 # Skip all tests if credentials are not available
 pytestmark = pytest.mark.skipif(
     not os.environ.get("NEO4J_AURA_CLIENT_ID") or not os.environ.get("NEO4J_AURA_CLIENT_SECRET"),
