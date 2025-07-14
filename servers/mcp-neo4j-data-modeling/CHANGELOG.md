@@ -5,6 +5,7 @@
 ### Changed
 
 ### Added
+* Add HTTP transport option
 
 ## v0.1.1
 

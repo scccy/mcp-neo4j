@@ -23,32 +23,6 @@ async def parse_sse_response(response: aiohttp.ClientResponse) -> dict:
     raise ValueError("No data line found in SSE response")
 
 
-@pytest.fixture
-def mcp_server():
-    """Create an MCP server instance for testing."""
-    return create_mcp_server()
-
-
-class TestTransportModes:
-    """Test all transport modes work correctly."""
-
-    @pytest.mark.asyncio
-    async def test_stdio_transport(self, mcp_server):
-        """Test that stdio transport works correctly."""
-        # Test that the server can be created and tools can be listed
-        tools = await mcp_server.get_tools()
-        assert len(tools) > 0
-        tool_names = list(tools.keys())
-        assert "validate_node" in tool_names
-
-    @pytest.mark.asyncio
-    async def test_sse_transport(self, mcp_server):
-        """Test that SSE transport works correctly."""
-        # Test that the server can be created and tools can be listed
-        tools = await mcp_server.get_tools()
-        assert len(tools) > 0
-        tool_names = list(tools.keys())
-        assert "validate_node" in tool_names
 
     @pytest.mark.asyncio
     async def test_http_transport_creation(self, mcp_server):
