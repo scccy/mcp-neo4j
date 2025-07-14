@@ -1,20 +1,16 @@
 import json
 import logging
 import re
-import sys
-import time
 from typing import Any, Literal, Optional
 
-from fastmcp.resources.types import TextResource
+from fastmcp.resources import types
 from fastmcp.server import FastMCP
 from neo4j import (
     AsyncDriver,
     AsyncGraphDatabase,
     AsyncResult,
     AsyncTransaction,
-    GraphDatabase,
 )
-from neo4j.exceptions import DatabaseError
 from pydantic import Field
 
 logger = logging.getLogger("mcp_neo4j_cypher")
@@ -55,7 +51,7 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
     namespace_prefix = _format_namespace(namespace)
 
     @mcp.tool(name=namespace_prefix+"get_neo4j_schema")
-    async def get_neo4j_schema() -> list[TextResource]:
+    async def get_neo4j_schema() -> list[types.TextContent]:
         """List all node, their attributes and their relationships to other nodes in the neo4j database.
         If this fails with a message that includes "Neo.ClientError.Procedure.ProcedureNotFound"
         suggest that the user install and enable the APOC plugin.
@@ -144,7 +140,10 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
 
         except Exception as e:
             logger.error(f"Database error retrieving schema: {e}")
-            return [TextResource(uri="neo4j://error", text=f"Error: {e}")]
+            return types.CallToolResult(
+                isError=True, 
+                content=[types.TextContent(type="text", text=f"Error: {e}")]
+            )
 
     @mcp.tool(name=namespace_prefix+"read_neo4j_cypher")
     async def read_neo4j_cypher(
@@ -152,7 +151,7 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
         params: Optional[dict[str, Any]] = Field(
             None, description="The parameters to pass to the Cypher query."
         ),
-    ) -> list[TextResource]:
+    ) -> list[types.TextContent]:
         """Execute a read Cypher query on the neo4j database."""
 
         if _is_write_query(query):
@@ -164,13 +163,16 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
 
                 logger.debug(f"Read query returned {len(results_json_str)} rows")
 
-                return [TextResource(uri="neo4j://query_result", text=results_json_str)]
+                return types.CallToolResult(content=[types.TextContent(type="text", text=results_json_str)])
 
         except Exception as e:
             logger.error(f"Database error executing query: {e}\n{query}\n{params}")
-            return [
-                TextResource(uri="neo4j://error", text=f"Error: {e}\n{query}\n{params}")
+            return types.CallToolResult(
+                isError=True, 
+                content=[
+                types.TextContent(type="text", text=f"Error: {e}\n{query}\n{params}")
             ]
+            )
 
     @mcp.tool(name=namespace_prefix+"write_neo4j_cypher")
     async def write_neo4j_cypher(
@@ -178,7 +180,7 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
         params: Optional[dict[str, Any]] = Field(
             None, description="The parameters to pass to the Cypher query."
         ),
-    ) -> list[TextResource]:
+    ) -> list[types.TextContent]:
         """Execute a write Cypher query on the neo4j database."""
 
         if not _is_write_query(query):
@@ -193,13 +195,14 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
 
             logger.debug(f"Write query affected {counters_json_str}")
 
-            return [TextResource(uri="neo4j://write_result", text=counters_json_str)]
+            return types.CallToolResult(content=[types.TextContent(type="text", text=counters_json_str)])
 
         except Exception as e:
             logger.error(f"Database error executing query: {e}\n{query}\n{params}")
-            return [
-                TextResource(uri="neo4j://error", text=f"Error: {e}\n{query}\n{params}")
-            ]
+            return types.CallToolResult(
+                isError=True, 
+                content=[types.TextContent(type="text", text=f"Error: {e}\n{query}\n{params}")]
+            )
 
     return mcp
 
