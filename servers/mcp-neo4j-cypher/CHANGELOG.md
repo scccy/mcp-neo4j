@@ -1,6 +1,7 @@
 ## Next
 
 ### Fixed
+* Updated the `get_neo4j_schema` tool to include Relationship properties as well
 
 ### Changed
 * Update error handling in read and write tools
