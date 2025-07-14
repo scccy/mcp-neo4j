@@ -3,7 +3,8 @@ import logging
 import re
 from typing import Any, Literal, Optional
 
-from fastmcp.resources import types
+from fastmcp.exceptions import ToolError
+from fastmcp.tools.tool import ToolResult, TextContent
 from fastmcp.server import FastMCP
 from neo4j import (
     AsyncDriver,
@@ -51,7 +52,7 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
     namespace_prefix = _format_namespace(namespace)
 
     @mcp.tool(name=namespace_prefix+"get_neo4j_schema")
-    async def get_neo4j_schema() -> list[types.TextContent]:
+    async def get_neo4j_schema() -> list[ToolResult]:
         """List all node, their attributes and their relationships to other nodes in the neo4j database.
         If this fails with a message that includes "Neo.ClientError.Procedure.ProcedureNotFound"
         suggest that the user install and enable the APOC plugin.
@@ -136,14 +137,11 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
                 schema_clean = clean_schema(schema)
                 schema_clean_str = json.dumps(schema_clean)
 
-                return types.CallToolResult(content=[types.TextContent(type="text", text=schema_clean_str)])
+                return ToolResult(content=[TextContent(type="text", text=schema_clean_str)])
 
         except Exception as e:
             logger.error(f"Database error retrieving schema: {e}")
-            return types.CallToolResult(
-                isError=True, 
-                content=[types.TextContent(type="text", text=f"Error: {e}")]
-            )
+            raise ToolError(f"Error: {e}")
 
     @mcp.tool(name=namespace_prefix+"read_neo4j_cypher")
     async def read_neo4j_cypher(
@@ -151,7 +149,7 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
         params: Optional[dict[str, Any]] = Field(
             None, description="The parameters to pass to the Cypher query."
         ),
-    ) -> list[types.TextContent]:
+    ) -> list[ToolResult]:
         """Execute a read Cypher query on the neo4j database."""
 
         if _is_write_query(query):
@@ -163,16 +161,11 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
 
                 logger.debug(f"Read query returned {len(results_json_str)} rows")
 
-                return types.CallToolResult(content=[types.TextContent(type="text", text=results_json_str)])
+                return ToolResult(content=[TextContent(type="text", text=results_json_str)])
 
         except Exception as e:
             logger.error(f"Database error executing query: {e}\n{query}\n{params}")
-            return types.CallToolResult(
-                isError=True, 
-                content=[
-                types.TextContent(type="text", text=f"Error: {e}\n{query}\n{params}")
-            ]
-            )
+            raise ToolError(f"Error: {e}\n{query}\n{params}")
 
     @mcp.tool(name=namespace_prefix+"write_neo4j_cypher")
     async def write_neo4j_cypher(
@@ -180,7 +173,7 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
         params: Optional[dict[str, Any]] = Field(
             None, description="The parameters to pass to the Cypher query."
         ),
-    ) -> list[types.TextContent]:
+    ) -> list[ToolResult]:
         """Execute a write Cypher query on the neo4j database."""
 
         if not _is_write_query(query):
@@ -195,14 +188,11 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
 
             logger.debug(f"Write query affected {counters_json_str}")
 
-            return types.CallToolResult(content=[types.TextContent(type="text", text=counters_json_str)])
+            return ToolResult(content=[TextContent(type="text", text=counters_json_str)])
 
         except Exception as e:
             logger.error(f"Database error executing query: {e}\n{query}\n{params}")
-            return types.CallToolResult(
-                isError=True, 
-                content=[types.TextContent(type="text", text=f"Error: {e}\n{query}\n{params}")]
-            )
+            raise ToolError(f"Error: {e}\n{query}\n{params}")
 
     return mcp
 

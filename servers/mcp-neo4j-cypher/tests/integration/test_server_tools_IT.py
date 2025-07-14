@@ -10,8 +10,7 @@ async def test_get_neo4j_schema(mcp_server: FastMCP, init_data: Any):
     tool = await mcp_server.get_tool("get_neo4j_schema")
     response = await tool.run(dict())
 
-    temp_parsed = json.loads(response[0].text)['content'][0]['text']
-    schema = json.loads(temp_parsed)
+    schema = json.loads(response.content[0].text)
     
     # Verify the schema result
     assert "Person" in schema
@@ -27,9 +26,7 @@ async def test_write_neo4j_cypher(mcp_server: FastMCP):
     tool = await mcp_server.get_tool("write_neo4j_cypher")
     response = await tool.run(dict(query=query))
 
-    text_content = response.content[0].text
-    outer = json.loads(text_content)
-    result = json.loads(outer["text"])
+    result = json.loads(response.content[0].text)
 
     assert "nodes_created" in result
     assert "labels_added" in result
@@ -50,9 +47,7 @@ async def test_read_neo4j_cypher(mcp_server: FastMCP, init_data: Any):
     tool = await mcp_server.get_tool("read_neo4j_cypher")
     response = await tool.run(dict(query=query))
 
-    text_content = response.content[0].text
-    outer = json.loads(text_content)
-    result = json.loads(outer["text"])
+    result = json.loads(response.content[0].text)
 
     assert len(result) == 2
     assert result[0]["person"] == "Alice"
