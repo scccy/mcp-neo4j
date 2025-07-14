@@ -10,6 +10,8 @@
 * Add .dxt file for Cypher MCP server
 * Add .dxt file generation to Cypher MCP Publish GitHub action
 * Add error indicator to tool results in the `CallToolResult` object
+* Add HTTP transport option
+* Migrate to FastMCP v2.x
 
 ## v0.2.4
 

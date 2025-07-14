@@ -5,6 +5,8 @@
 ### Changed
 
 ### Added
+* Add HTTP transport option
+* Migrate to FastMCP v2.x
 
 ## v0.1.1
 

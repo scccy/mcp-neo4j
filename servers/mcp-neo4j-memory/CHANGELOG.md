@@ -1,8 +1,12 @@
 ## Next
 
 ### Fixed
+* Fix bug in `search_nodes` method where query arg wasn't passed properly
 
 ### Changed
+* Implement FastMCP with function decorators to simplify server code
+* Add HTTP transport option
+* Migrate to FastMCP v2.x
 
 ### Added
 

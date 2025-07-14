@@ -1,13 +1,14 @@
-import os
-from typing import Any
 import asyncio
+import os
 import subprocess
+from typing import Any
+
 import pytest
 import pytest_asyncio
-from neo4j import AsyncGraphDatabase
+from neo4j import GraphDatabase
 from testcontainers.neo4j import Neo4jContainer
 
-from mcp_neo4j_data_modeling.server import create_mcp_server
+from mcp_neo4j_memory.server import Neo4jMemory, create_mcp_server
 
 neo4j = (
     Neo4jContainer("neo4j:latest")
@@ -16,7 +17,6 @@ neo4j = (
     .with_env("NEO4J_apoc_import_file_use__neo4j__config", "true")
     .with_env("NEO4J_PLUGINS", '["apoc"]')
 )
-
 
 @pytest.fixture(scope="module", autouse=True)
 def setup(request):
@@ -33,53 +33,41 @@ def setup(request):
 
     yield neo4j
 
-
 @pytest_asyncio.fixture(scope="function")
 async def async_neo4j_driver(setup: Neo4jContainer):
-    driver = AsyncGraphDatabase.driver(
+    driver = GraphDatabase.driver(
         setup.get_connection_url(), auth=(setup.username, setup.password)
     )
     try:
         yield driver
     finally:
-        await driver.close()
+        await driver.close() 
 
+@pytest.fixture
+def memory(neo4j_driver):
+    """Create a memory instance."""
+    return Neo4jMemory(neo4j_driver)
 
-@pytest_asyncio.fixture(scope="function")
-async def mcp_server():
-    mcp = create_mcp_server()
-    return mcp
+@pytest.fixture
+def mcp_server(neo4j_driver, memory):
+    """Create an MCP server instance."""
+    return create_mcp_server(neo4j_driver, memory)
 
-
-@pytest.fixture(scope="function")
-def init_data(setup: Neo4jContainer, clear_data: Any):
-    with setup.get_driver().session(database="neo4j") as session:
-        session.run("CREATE (a:Person {name: 'Alice', age: 30})")
-        session.run("CREATE (b:Person {name: 'Bob', age: 25})")
-        session.run("CREATE (c:Person {name: 'Charlie', age: 35})")
-        session.run(
-            "MATCH (a:Person {name: 'Alice'}), (b:Person {name: 'Bob'}) CREATE (a)-[:FRIEND]->(b)"
-        )
-        session.run(
-            "MATCH (b:Person {name: 'Bob'}), (c:Person {name: 'Charlie'}) CREATE (b)-[:FRIEND]->(c)"
-        )
-
-
-@pytest.fixture(scope="function")
-def clear_data(setup: Neo4jContainer):
-    with setup.get_driver().session(database="neo4j") as session:
-        session.run("MATCH (n) DETACH DELETE n")
 
 @pytest_asyncio.fixture
-async def sse_server():
+async def sse_server(setup: Neo4jContainer):
     """Start the MCP server in SSE mode."""
 
     
     process = await asyncio.create_subprocess_exec(
-        "uv", "run", "mcp-neo4j-data-modeling", 
+        "uv", "run", "mcp-neo4j-memory", 
         "--transport", "sse", 
         "--server-host", "127.0.0.1", 
         "--server-port", "8002",
+        "--db-url", setup.get_connection_url(),
+        "--username", setup.username,
+        "--password", setup.password,
+        "--database", "neo4j",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=os.getcwd()

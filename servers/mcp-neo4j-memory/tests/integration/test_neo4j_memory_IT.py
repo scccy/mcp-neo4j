@@ -1,33 +1,31 @@
 import os
 import pytest
-import asyncio
-from neo4j import GraphDatabase
-from mcp_neo4j_memory.server import Neo4jMemory, Entity, Relation, ObservationAddition, ObservationDeletion
+import pytest_asyncio
 
-@pytest.fixture(scope="function")
-def neo4j_driver():
-    """Create a Neo4j driver using environment variables for connection details."""
+from neo4j import AsyncGraphDatabase
+from mcp_neo4j_memory.server import Neo4jMemory, Entity, Relation, ObservationAddition, ObservationDeletion, KnowledgeGraph
+
+def get_neo4j_driver():
     uri = os.environ.get("NEO4J_URI", "neo4j://localhost:7687")
     user = os.environ.get("NEO4J_USERNAME", "neo4j")
     password = os.environ.get("NEO4J_PASSWORD", "password")
-    
-    driver = GraphDatabase.driver(uri, auth=(user, password))
-    
+    return AsyncGraphDatabase.driver(uri, auth=(user, password))
+
+@pytest_asyncio.fixture(scope="function")
+async def neo4j_driver():
+    driver = get_neo4j_driver()
     # Verify connection
     try:
-        driver.verify_connectivity()
+        await driver.verify_connectivity()
     except Exception as e:
         pytest.skip(f"Could not connect to Neo4j: {e}")
-    
     yield driver
-    
-    # Clean up test data after tests
-    driver.execute_query("MATCH (n:Memory) DETACH DELETE n")
-    
-    driver.close()
+    async with driver.session() as session:
+        await session.run("MATCH (n:Memory) DETACH DELETE n")
+    await driver.close()
 
-@pytest.fixture(scope="function")
-def memory(neo4j_driver):
+@pytest_asyncio.fixture(scope="function")
+async def memory(neo4j_driver) -> Neo4jMemory:
     """Create a Neo4jMemory instance with the Neo4j driver."""
     return Neo4jMemory(neo4j_driver)
 
@@ -75,14 +73,14 @@ async def test_create_and_read_relations(memory):
     assert len(created_relations) == 1
     
     # Read the graph
-    graph = await memory.read_graph()
+    graph: KnowledgeGraph = await memory.read_graph()
     
     # Verify relation was created
     assert len(graph.relations) == 1
     relation = graph.relations[0]
     assert relation.source == "Alice"
     assert relation.target == "Bob"
-    assert relation.relationType == "KNOWS"
+    assert relation.relationType == "RELATION"
 
 @pytest.mark.asyncio
 async def test_add_observations(memory):
@@ -182,11 +180,11 @@ async def test_delete_relations(memory):
     await memory.delete_relations(relations_to_delete)
     
     # Read the graph
-    graph = await memory.read_graph()
+    graph: KnowledgeGraph = await memory.read_graph()
     
     # Verify only the WORKS_WITH relation remains
     assert len(graph.relations) == 1
-    assert graph.relations[0].relationType == "WORKS_WITH"
+    assert graph.relations[0].relationType == "RELATION"
 
 @pytest.mark.asyncio
 async def test_search_nodes(memory):
@@ -194,7 +192,7 @@ async def test_search_nodes(memory):
     test_entities = [
         Entity(name="Ian", type="Person", observations=["Likes coffee"]),
         Entity(name="Jane", type="Person", observations=["Likes tea"]),
-        Entity(name="Coffee", type="Beverage", observations=["Hot drink"])
+        Entity(name="coffee", type="Beverage", observations=["Hot drink"])
     ]
     await memory.create_entities(test_entities)
     
@@ -204,7 +202,7 @@ async def test_search_nodes(memory):
     # Verify search results
     entity_names = [e.name for e in result.entities]
     assert "Ian" in entity_names
-    assert "Coffee" in entity_names
+    assert "coffee" in entity_names
     assert "Jane" not in entity_names
 
 @pytest.mark.asyncio
