@@ -10,12 +10,14 @@ async def test_get_neo4j_schema(mcp_server: FastMCP, init_data: Any):
     response = await mcp_server.call_tool("get_neo4j_schema", dict())
 
     temp_parsed = json.loads(response[0].text)['content'][0]['text']
-    schema = json.loads(temp_parsed)[0]
-
+    schema = json.loads(temp_parsed)
+    
     # Verify the schema result
-    assert "label" in schema
-    assert "attributes" in schema
-    assert "relationships" in schema
+    assert "Person" in schema
+    assert schema['Person']['count'] == 3
+    assert len(schema['Person']['properties']) == 2
+    assert "FRIEND" in schema['Person']['relationships']
+    
 
 
 @pytest.mark.asyncio(loop_scope="function")
