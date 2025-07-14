@@ -166,18 +166,19 @@ async def main(
     mcp = create_mcp_server(neo4j_driver, database, namespace)
 
     # Run the server with the specified transport
-    if transport == "http":
-        logger.info(f"Running Neo4j Cypher MCP Server with HTTP transport on {host}:{port}...")
-        await mcp.run_http_async(host=host, port=port, path=path)
-    elif transport == "stdio":
-        logger.info("Running Neo4j Cypher MCP Server with stdio transport...")
-        await mcp.run_stdio_async()
-    elif transport == "sse":
-        logger.info(f"Running Neo4j Cypher MCP Server with SSE transport on {host}:{port}...")
-        await mcp.run_sse_async(host=host, port=port, path=path)
-    else:
-        logger.error(f"Invalid transport: {transport} | Must be either 'stdio', 'sse', or 'http'")
-        raise ValueError(f"Invalid transport: {transport} | Must be either 'stdio', 'sse', or 'http'")
+    match transport:
+        case "http":
+            logger.info(f"Running Neo4j Cypher MCP Server with HTTP transport on {host}:{port}...")
+            await mcp.run_http_async(host=host, port=port, path=path)
+        case "stdio":
+            logger.info("Running Neo4j Cypher MCP Server with stdio transport...")
+            await mcp.run_stdio_async()
+        case "sse":
+            logger.info(f"Running Neo4j Cypher MCP Server with SSE transport on {host}:{port}...")
+            await mcp.run_sse_async(host=host, port=port, path=path)
+        case _:
+            logger.error(f"Invalid transport: {transport} | Must be either 'stdio', 'sse', or 'http'")
+            raise ValueError(f"Invalid transport: {transport} | Must be either 'stdio', 'sse', or 'http'")
 
 
 if __name__ == "__main__":
