@@ -179,10 +179,10 @@ mcp-neo4j-aura-manager --transport http --host 0.0.0.0 --port 8080 --path /api/m
 Environment variables for HTTP configuration:
 
 ```bash
-export NEO4J_AURA_TRANSPORT=http
-export NEO4J_AURA_HTTP_HOST=0.0.0.0
-export NEO4J_AURA_HTTP_PORT=8080
-export NEO4J_AURA_HTTP_PATH=/api/mcp/
+export NEO4J_TRANSPORT=http
+export NEO4J_MCP_SERVER_HOST=0.0.0.0
+export NEO4J_MCP_SERVER_PORT=8080
+export NEO4J_MCP_SERVER_PATH=/api/mcp/
 mcp-neo4j-aura-manager
 ```
 

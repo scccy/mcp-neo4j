@@ -63,9 +63,9 @@ Environment variables are also supported:
 
 ```bash
 export NEO4J_TRANSPORT=http
-export NEO4J_HTTP_HOST=0.0.0.0
-export NEO4J_HTTP_PORT=8080
-export NEO4J_HTTP_PATH=/api/mcp/
+export NEO4J_MCP_SERVER_HOST=0.0.0.0
+export NEO4J_MCP_SERVER_PORT=8080
+export NEO4J_MCP_SERVER_PATH=/api/mcp/
 mcp-neo4j-cypher
 ```
 
