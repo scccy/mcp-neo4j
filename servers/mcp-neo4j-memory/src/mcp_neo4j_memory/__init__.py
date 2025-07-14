@@ -20,9 +20,9 @@ def main():
                         default=os.getenv("NEO4J_DATABASE", "neo4j"),
                         help="Neo4j database name")
     parser.add_argument("--transport", default="stdio", help="Transport type (stdio, sse, http)")
-    parser.add_argument("--host", default=None, help="HTTP host (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=None, help="HTTP port (default: 8000)")
-    parser.add_argument("--path", default=None, help="HTTP path (default: /mcp/)")
+    parser.add_argument("--server-host", default=None, help="HTTP host (default: 127.0.0.1)")
+    parser.add_argument("--server-port", type=int, default=None, help="HTTP port (default: 8000)")
+    parser.add_argument("--server-path", default=None, help="HTTP path (default: /mcp/)")
     
     args = parser.parse_args()
     asyncio.run(server.main(
@@ -31,9 +31,9 @@ def main():
         args.password, 
         args.database,
         args.transport or os.getenv("NEO4J_TRANSPORT", "stdio"),
-        args.host or os.getenv("NEO4J_HTTP_HOST", "127.0.0.1"),
-        args.port or int(os.getenv("NEO4J_HTTP_PORT", "8000")),
-        args.path or os.getenv("NEO4J_HTTP_PATH", "/mcp/"),
+        args.server_host or os.getenv("NEO4J_MCP_SERVER_HOST", "127.0.0.1"),
+        args.server_port or int(os.getenv("NEO4J_MCP_SERVER_PORT", "8000")),
+        args.server_path or os.getenv("NEO4J_MCP_SERVER_PATH", "/mcp/"),
     ))
 
 

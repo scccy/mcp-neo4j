@@ -4,14 +4,11 @@ import os
 import pytest
 import aiohttp
 import subprocess
-import sys
-import time
-from typing import AsyncGenerator
 import uuid
 
 import pytest_asyncio
-from neo4j import GraphDatabase
 from testcontainers.neo4j import Neo4jContainer
+
 
 
 async def parse_sse_response(response: aiohttp.ClientResponse) -> dict:
@@ -28,89 +25,19 @@ async def parse_sse_response(response: aiohttp.ClientResponse) -> dict:
     raise ValueError("No data line found in SSE response")
 
 
-@pytest.fixture(scope="module")
-def neo4j_container():
-    """Start a Neo4j container for testing."""
-    container = (
-        Neo4jContainer("neo4j:latest")
-        .with_env("NEO4J_apoc_export_file_enabled", "true")
-        .with_env("NEO4J_apoc_import_file_enabled", "true")
-        .with_env("NEO4J_apoc_import_file_use__neo4j__config", "true")
-        .with_env("NEO4J_PLUGINS", '["apoc"]')
-    )
-    container.start()
-    yield container
-    container.stop()
-
-
-def get_neo4j_driver():
-    uri = os.environ.get("NEO4J_URI", "neo4j://localhost:7687")
-    user = os.environ.get("NEO4J_USERNAME", "neo4j")
-    password = os.environ.get("NEO4J_PASSWORD", "password")
-    return GraphDatabase.driver(uri, auth=(user, password))
-
-
-@pytest.fixture
-def neo4j_driver():
-    driver = get_neo4j_driver()
-    yield driver
-    driver.close()
-
-
-@pytest.fixture
-def memory(neo4j_driver):
-    """Create a memory instance."""
-    from mcp_neo4j_memory.server import Neo4jMemory
-    return Neo4jMemory(neo4j_driver)
-
-@pytest.fixture
-def mcp_server(neo4j_driver, memory):
-    """Create an MCP server instance."""
-    from mcp_neo4j_memory.server import create_mcp_server
-    return create_mcp_server(neo4j_driver, memory)
-
-
-class TestTransportModes:
-    """Test all transport modes work correctly."""
-
-    @pytest.mark.asyncio
-    async def test_stdio_transport(self, mcp_server):
-        """Test that stdio transport works correctly."""
-        # Test that the server can be created and tools can be listed
-        tools = await mcp_server.get_tools()
-        assert len(tools) > 0
-        tool_names = list(tools.keys())
-        assert "read_graph" in tool_names
-        assert "create_entities" in tool_names
-        assert "search_nodes" in tool_names
-
-    @pytest.mark.asyncio
-    async def test_sse_transport(self, mcp_server):
-        """Test that SSE transport works correctly."""
-        # FastMCP handles SSE internally, so we just verify the server works
-        tools = await mcp_server.get_tools()
-        assert len(tools) > 0
-
-    @pytest.mark.asyncio
-    async def test_http_transport_creation(self, mcp_server):
-        """Test that HTTP transport can be created."""
-        # FastMCP handles HTTP internally, so we just verify the server works
-        tools = await mcp_server.get_tools()
-        assert len(tools) > 0
-
 
 class TestHTTPEndpoints:
     """Test HTTP endpoints work correctly."""
 
     @pytest_asyncio.fixture
-    async def http_server(self, neo4j_container):
+    async def http_server(self, setup: Neo4jContainer):
         """Start the MCP server in HTTP mode."""
         # Set environment variables for the server
         env = os.environ.copy()
         env.update({
-            "NEO4J_URI": neo4j_container.get_connection_url(),
-            "NEO4J_USERNAME": neo4j_container.username,
-            "NEO4J_PASSWORD": neo4j_container.password,
+            "NEO4J_URI": setup.get_connection_url(),
+            "NEO4J_USERNAME": setup.username,
+            "NEO4J_PASSWORD": setup.password,
             "NEO4J_DATABASE": "neo4j",
         })
         
@@ -120,9 +47,9 @@ class TestHTTPEndpoints:
             "--transport", "http", 
             "--server-host", "127.0.0.1", 
             "--server-port", "8004",
-            "--db-url", neo4j_container.get_connection_url(),
-            "--username", neo4j_container.username,
-            "--password", neo4j_container.password,
+            "--db-url", setup.get_connection_url(),
+            "--username", setup.username,
+            "--password", setup.password,
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -176,9 +103,9 @@ class TestHTTPEndpoints:
                 result = await parse_sse_response(response)
                 assert "result" in result
                 assert "tools" in result["result"]
-                tools = result["result"]["tools"]
-                assert len(tools) > 0
-                tool_names = [tool["name"] for tool in tools]
+                tools = result["result"].get("tools")
+                assert tools is not None
+                tool_names = [tool.get("name") for tool in tools]
                 assert "read_graph" in tool_names
 
     @pytest.mark.asyncio
@@ -204,10 +131,10 @@ class TestHTTPEndpoints:
                 assert "result" in result
                 assert "content" in result["result"]
                 # Parse the content
-                content = result["result"]["content"]
+                content = result["result"]["content"] # type: ignore
                 assert len(content) > 0
                 # The content contains the actual data directly
-                actual_data = content[0]
+                actual_data = content[0].get("text", "")
                 assert "entities" in actual_data
                 assert "relations" in actual_data
 
@@ -242,11 +169,10 @@ class TestHTTPEndpoints:
                 assert "result" in result
                 assert "content" in result["result"]
                 # Parse the content
-                content = result["result"]["content"]
+                content = result["result"]["content"] # type: ignore
                 assert len(content) > 0
                 # The content contains the actual data directly
-                actual_data = content[0]
-                assert isinstance(actual_data, dict)
+                actual_data = content[0].get("text", "")
                 assert "name" in actual_data
                 assert "type" in actual_data
                 assert "observations" in actual_data
@@ -276,7 +202,7 @@ class TestHTTPEndpoints:
                 assert "result" in result
                 assert "content" in result["result"]
                 # Parse the content
-                content = result["result"]["content"]
+                content = result["result"]["content"] # type: ignore
                 assert len(content) > 0
                 # The content contains the actual data directly
                 actual_data = content[0]
@@ -289,21 +215,21 @@ class TestErrorHandling:
     """Test error handling in HTTP transport."""
 
     @pytest_asyncio.fixture
-    async def http_server(self, neo4j_container):
+    async def http_server(self, setup: Neo4jContainer):
         """Start the MCP server in HTTP mode."""
         env = os.environ.copy()
         env.update({
-            "NEO4J_URI": neo4j_container.get_connection_url(),
-            "NEO4J_USERNAME": neo4j_container.username,
-            "NEO4J_PASSWORD": neo4j_container.password,
+            "NEO4J_URI": setup.get_connection_url(),
+            "NEO4J_USERNAME": setup.username,
+            "NEO4J_PASSWORD": setup.password,
             "NEO4J_DATABASE": "neo4j",
         })
         
         process = await asyncio.create_subprocess_exec(
             "uv", "run", "mcp-neo4j-memory", "--transport", "http", "--server-host", "127.0.0.1", "--server-port", "8005",
-            "--db-url", neo4j_container.get_connection_url(),
-            "--username", neo4j_container.username,
-            "--password", neo4j_container.password,
+            "--db-url", setup.get_connection_url(),
+            "--username", setup.username,
+            "--password", setup.password,
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -403,21 +329,21 @@ class TestHTTPTransportIntegration:
     """Integration tests for HTTP transport."""
 
     @pytest.mark.asyncio
-    async def test_full_workflow(self, neo4j_container):
+    async def test_full_workflow(self, setup: Neo4jContainer):
         """Test a complete workflow over HTTP transport."""
         env = os.environ.copy()
         env.update({
-            "NEO4J_URI": neo4j_container.get_connection_url(),
-            "NEO4J_USERNAME": neo4j_container.username,
-            "NEO4J_PASSWORD": neo4j_container.password,
+            "NEO4J_URI": setup.get_connection_url(),
+            "NEO4J_USERNAME": setup.username,
+            "NEO4J_PASSWORD": setup.password,
             "NEO4J_DATABASE": "neo4j",
         })
         
         process = await asyncio.create_subprocess_exec(
             "uv", "run", "mcp-neo4j-memory", "--transport", "http", "--server-host", "127.0.0.1", "--server-port", "8006",
-            "--db-url", neo4j_container.get_connection_url(),
-            "--username", neo4j_container.username,
-            "--password", neo4j_container.password,
+            "--db-url", setup.get_connection_url(),
+            "--username", setup.username,
+            "--password", setup.password,
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

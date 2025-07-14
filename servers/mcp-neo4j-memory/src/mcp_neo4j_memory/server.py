@@ -1,14 +1,9 @@
-import os
 import logging
-import json
-from typing import Any, Dict, List, Optional, Literal
-from contextlib import asynccontextmanager
+from typing import Any, Dict, List, Literal
 
-import neo4j
 from neo4j import AsyncGraphDatabase
 from pydantic import BaseModel, Field
 
-from fastmcp.resources.types import TextResource
 from fastmcp.server import FastMCP
 
 # Set up logging
@@ -185,9 +180,9 @@ class Neo4jMemory:
                 # Fallback to simple text search
                 result = await session.run("""
                     MATCH (e:Entity)
-                    WHERE e.name CONTAINS $query OR e.type CONTAINS $query OR ANY(obs IN e.observations WHERE obs CONTAINS $query)
+                    WHERE e.name CONTAINS $q OR e.type CONTAINS $q OR ANY(obs IN e.observations WHERE obs CONTAINS $q)
                     RETURN e.name as name, e.type as type, e.observations as observations
-                """, query=query)
+                """, q=query)
                 logger.debug("Using fallback text search")
             
             entities = []
@@ -385,14 +380,15 @@ async def main(
 
     # Run the server with the specified transport
     logger.info(f"Starting server with transport: {transport}")
-    if transport == "http":
-        logger.info(f"HTTP server starting on {host}:{port}{path}")
-        await mcp.run_http_async(host=host, port=port, path=path)
-    elif transport == "stdio":
-        logger.info("STDIO server starting")
-        await mcp.run_stdio_async()
-    elif transport == "sse":
-        logger.info(f"SSE server starting on {host}:{port}{path}")
-        await mcp.run_sse_async(host=host, port=port, path=path)
-    else:
-        raise ValueError(f"Unsupported transport: {transport}")
+    match transport:
+        case "http":
+            logger.info(f"HTTP server starting on {host}:{port}{path}")
+            await mcp.run_http_async(host=host, port=port, path=path)
+        case "stdio":
+            logger.info("STDIO server starting")
+            await mcp.run_stdio_async()
+        case "sse":
+            logger.info(f"SSE server starting on {host}:{port}{path}")
+            await mcp.run_sse_async(host=host, port=port, path=path)
+        case _:
+            raise ValueError(f"Unsupported transport: {transport}")

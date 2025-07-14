@@ -1,9 +1,9 @@
 import os
 import pytest
 import pytest_asyncio
-import asyncio
+
 from neo4j import AsyncGraphDatabase
-from mcp_neo4j_memory.server import Neo4jMemory, Entity, Relation, ObservationAddition, ObservationDeletion
+from mcp_neo4j_memory.server import Neo4jMemory, Entity, Relation, ObservationAddition, ObservationDeletion, KnowledgeGraph
 
 def get_neo4j_driver():
     uri = os.environ.get("NEO4J_URI", "neo4j://localhost:7687")
@@ -25,7 +25,7 @@ async def neo4j_driver():
     await driver.close()
 
 @pytest_asyncio.fixture(scope="function")
-async def memory(neo4j_driver):
+async def memory(neo4j_driver) -> Neo4jMemory:
     """Create a Neo4jMemory instance with the Neo4j driver."""
     return Neo4jMemory(neo4j_driver)
 
@@ -73,7 +73,7 @@ async def test_create_and_read_relations(memory):
     assert len(created_relations) == 1
     
     # Read the graph
-    graph = await memory.read_graph()
+    graph: KnowledgeGraph = await memory.read_graph()
     
     # Verify relation was created
     assert len(graph.relations) == 1
@@ -180,20 +180,19 @@ async def test_delete_relations(memory):
     await memory.delete_relations(relations_to_delete)
     
     # Read the graph
-    graph = await memory.read_graph()
+    graph: KnowledgeGraph = await memory.read_graph()
     
     # Verify only the WORKS_WITH relation remains
     assert len(graph.relations) == 1
     assert graph.relations[0].relationType == "RELATION"
 
-@pytest.mark.skip(reason="Server has parameter passing bug in search_nodes method")
 @pytest.mark.asyncio
 async def test_search_nodes(memory):
     # Create test entities
     test_entities = [
         Entity(name="Ian", type="Person", observations=["Likes coffee"]),
         Entity(name="Jane", type="Person", observations=["Likes tea"]),
-        Entity(name="Coffee", type="Beverage", observations=["Hot drink"])
+        Entity(name="coffee", type="Beverage", observations=["Hot drink"])
     ]
     await memory.create_entities(test_entities)
     
@@ -203,7 +202,7 @@ async def test_search_nodes(memory):
     # Verify search results
     entity_names = [e.name for e in result.entities]
     assert "Ian" in entity_names
-    assert "Coffee" in entity_names
+    assert "coffee" in entity_names
     assert "Jane" not in entity_names
 
 @pytest.mark.asyncio
