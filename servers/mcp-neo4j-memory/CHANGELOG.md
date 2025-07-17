@@ -2,6 +2,7 @@
 
 ### Fixed
 * Fix bug in `search_nodes` method where query arg wasn't passed properly
+* Fix bug where stdio transport was always selected
 
 ### Changed
 * Implement FastMCP with function decorators to simplify server code
@@ -9,6 +10,7 @@
 * Migrate to FastMCP v2.x
 
 ### Added
+* Add compatibility for NEO4J_URI and NEO4J_URL env variables
 
 ## v0.1.5
 
