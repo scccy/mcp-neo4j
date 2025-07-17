@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir hatchling
 COPY pyproject.toml /app/
 
 # Install dependencies
-RUN pip install --no-cache-dir neo4j>=5.26.0 mcp>=1.6.0
+RUN pip install --no-cache-dir neo4j>=5.26.0 fastmcp>=2.0.0
 
 
 # Copy the source code
@@ -23,9 +23,10 @@ ENV NEO4J_URI="bolt://host.docker.internal:7687"
 ENV NEO4J_USERNAME="neo4j"
 ENV NEO4J_PASSWORD="password"
 ENV NEO4J_DATABASE="neo4j"
-ENV NEO4J_TRANSPORT="sse"
+ENV NEO4J_TRANSPORT="http"
 ENV NEO4J_MCP_SERVER_HOST="0.0.0.0"
 ENV NEO4J_MCP_SERVER_PORT="8000"
+ENV NEO4J_MCP_SERVER_PATH="/api/mcp/"
 
 EXPOSE 8000
 
