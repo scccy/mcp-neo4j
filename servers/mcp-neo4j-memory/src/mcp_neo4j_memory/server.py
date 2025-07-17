@@ -329,13 +329,6 @@ def create_mcp_server(neo4j_driver, memory: Neo4jMemory) -> FastMCP:
         result = await memory.find_nodes(names)
         return result.model_dump()
 
-    @mcp.tool()
-    async def open_nodes(names: List[str] = Field(..., description="List of node names to open")) -> dict:
-        """Open specific nodes by name (alias for find_nodes)."""
-        logger.info(f"MCP tool: open_nodes ({len(names)} names)")
-        result = await memory.find_nodes(names)
-        return result.model_dump()
-
     return mcp
 
 
