@@ -223,27 +223,27 @@ class Neo4jMemory:
                 type=record['type'],
                 observations=record.get('observations', list())
             ))
-            
-            # Get relations for found entities
-            relations: list[Relation] = list()
-            if entities:
-                query = """
-                MATCH (source:Memory)-[r]->(target:Memory)
-                WHERE source.name IN $names OR target.name IN $names
-                RETURN  source.name as source, 
-                        target.name as target, 
-                        type(r) as relationType
-                """
-                result_relations = await self.driver.execute_query(query, {"names": names}, routing_control=RoutingControl.READ)
-                for record in result_relations.records:
-                    relations.append(Relation(
-                        source=record["source"],
-                        target=record["target"],
-                        relationType=record["relationType"]
-                    ))
-            
-            logger.info(f"Found {len(entities)} entities and {len(relations)} relations")
-            return KnowledgeGraph(entities=entities, relations=relations)
+        
+        # Get relations for found entities
+        relations: list[Relation] = list()
+        if entities:
+            query = """
+            MATCH (source:Memory)-[r]->(target:Memory)
+            WHERE source.name IN $names OR target.name IN $names
+            RETURN  source.name as source, 
+                    target.name as target, 
+                    type(r) as relationType
+            """
+            result_relations = await self.driver.execute_query(query, {"names": names}, routing_control=RoutingControl.READ)
+            for record in result_relations.records:
+                relations.append(Relation(
+                    source=record["source"],
+                    target=record["target"],
+                    relationType=record["relationType"]
+                ))
+        
+        logger.info(f"Found {len(entities)} entities and {len(relations)} relations")
+        return KnowledgeGraph(entities=entities, relations=relations)
 
 
 def create_mcp_server(memory: Neo4jMemory) -> FastMCP:
