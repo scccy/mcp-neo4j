@@ -2,13 +2,20 @@
 
 ### Fixed
 * Fix bug in `search_nodes` method where query arg wasn't passed properly
+* Fix bug where stdio transport was always selected
+* Fixed argument parsing in server init
 
 ### Changed
 * Implement FastMCP with function decorators to simplify server code
 * Add HTTP transport option
 * Migrate to FastMCP v2.x
+* rename tools to be more clear - `search_nodes` into `search_memories` and `find_nodes` into `find_memories_by_name`
+* Update underlying Pydantic class `ObservationAddition` to have `observations` field to be consistent with `ObservationDeletion` class
+* Update Dockerfile to include `NEO4J_DATABASE`, `NEO4J_TRANSPORT`, `NEO4J_MCP_SERVER_HOST`, `NEO4J_MCP_SERVER_PORT` and `NEO4J_MCP_SERVER_PATH` env variables
 
 ### Added
+* Add compatibility for NEO4J_URI and NEO4J_URL env variables
+* Command in Makefile to easily build and deploy Docker image locally
 
 ## v0.1.5
 
