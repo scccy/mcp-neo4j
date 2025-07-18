@@ -5,6 +5,10 @@
 
 ### Changed
 * Update error handling in read and write tools
+* Update `get_neo4j_schema` tool description
+* Update `get_neo4j_schema` tool to catch missing apoc plugin error explicitly and provide guidance to client and user
+* Update error handling for tools to explicitly catch and return Neo4j based errors with details
+
 
 ### Added
 * Add .dxt file for Cypher MCP server

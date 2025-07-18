@@ -13,6 +13,7 @@ from neo4j import (
     AsyncResult,
     AsyncTransaction,
 )
+from neo4j.exceptions import ClientError, Neo4jError
 from pydantic import Field
 
 logger = logging.getLogger("mcp_neo4j_cypher")
@@ -61,9 +62,9 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
                                           )
             )
     async def get_neo4j_schema() -> list[ToolResult]:
-        """List all node, their attributes and their relationships to other nodes in the neo4j database.
-        If this fails with a message that includes "Neo.ClientError.Procedure.ProcedureNotFound"
-        suggest that the user install and enable the APOC plugin.
+        """
+        List all nodes, their attributes and their relationships to other nodes in the neo4j database.
+        This requires that the APOC plugin is installed and enabled.
         """
 
         get_schema_query = """
@@ -146,10 +147,19 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
                 schema_clean_str = json.dumps(schema_clean)
 
                 return ToolResult(content=[TextContent(type="text", text=schema_clean_str)])
-
+        
+        except ClientError as e:
+            if "Neo.ClientError.Procedure.ProcedureNotFound" in str(e):
+                raise ToolError("Neo4j Client Error: This instance of Neo4j does not have the APOC plugin installed. Please install and enable the APOC plugin to use the `get_neo4j_schema` tool.")
+            else:
+                raise ToolError(f"Neo4j Client Error: {e}")
+        
+        except Neo4jError as e:
+            raise ToolError(f"Neo4j Error: {e}")
+    
         except Exception as e:
-            logger.error(f"Database error retrieving schema: {e}")
-            raise ToolError(f"Error: {e}")
+            logger.error(f"Error retrieving Neo4j database schema: {e}")
+            raise ToolError(f"Unexpected Error: {e}")
 
     @mcp.tool(name=namespace_prefix+"read_neo4j_cypher", 
               annotations=ToolAnnotations(title="Read Neo4j Cypher", 
@@ -176,9 +186,13 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
                 logger.debug(f"Read query returned {len(results_json_str)} rows")
 
                 return ToolResult(content=[TextContent(type="text", text=results_json_str)])
-
+                    
+        except Neo4jError as e:
+            logger.error(f"Neo4j Error executing read query: {e}\n{query}\n{params}")
+            raise ToolError(f"Neo4j Error: {e}\n{query}\n{params}")
+    
         except Exception as e:
-            logger.error(f"Database error executing query: {e}\n{query}\n{params}")
+            logger.error(f"Error executing read query: {e}\n{query}\n{params}")
             raise ToolError(f"Error: {e}\n{query}\n{params}")
 
     @mcp.tool(name=namespace_prefix+"write_neo4j_cypher", 
@@ -210,8 +224,12 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
 
             return ToolResult(content=[TextContent(type="text", text=counters_json_str)])
 
+        except Neo4jError as e:
+            logger.error(f"Neo4j Error executing write query: {e}\n{query}\n{params}")
+            raise ToolError(f"Neo4j Error: {e}\n{query}\n{params}")
+    
         except Exception as e:
-            logger.error(f"Database error executing query: {e}\n{query}\n{params}")
+            logger.error(f"Error executing write query: {e}\n{query}\n{params}")
             raise ToolError(f"Error: {e}\n{query}\n{params}")
 
     return mcp
