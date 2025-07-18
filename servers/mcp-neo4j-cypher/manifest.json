@@ -2,7 +2,7 @@
   "dxt_version": "0.1",
   "name": "mcp-neo4j-cypher",
   "display_name": "Neo4j Cypher MCP Server",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "Execute read and write Cypher queries on your Neo4j database.",
   "long_description": "A Model Context Protocol (MCP) server that provides tools for interacting with Neo4j graph databases using Cypher queries. Supports both read and write operations with proper validation and error handling.",
   "author": {
@@ -30,14 +30,15 @@
         "NEO4J_TRANSPORT": "${user_config.transport}",
         "NEO4J_NAMESPACE": "${user_config.neo4j_namespace}",
         "NEO4J_MCP_SERVER_HOST": "${user_config.mcp_server_host}",
-        "NEO4J_MCP_SERVER_PORT": "${user_config.mcp_server_port}"
+        "NEO4J_MCP_SERVER_PORT": "${user_config.mcp_server_port}",
+        "NEO4J_MCP_SERVER_PATH": "${user_config.mcp_server_path}"
       }
     }
   },
   "tools": [
     {
       "name": "get_neo4j_schema",
-      "description": "Retrieve the schema of the Neo4j database, including node labels, properties, and relationships"
+      "description": "Retrieve the schema of the Neo4j database, including node labels, properties, and relationships. Requires that APOC plugin is installed."
     },
     {
       "name": "read_neo4j_cypher",
@@ -58,7 +59,7 @@
       "description": "The username for logging into Neo4j",
       "default": "neo4j",
       "required": true,
-      "sensitive": true
+      "sensitive": false
     },
     "neo4j_password": {
       "type": "string",
@@ -74,7 +75,7 @@
       "description": "The database to use in Neo4j, defaults to neo4j",
       "default": "neo4j",
       "required": false,
-      "sensitive": true
+      "sensitive": false
     },
     "neo4j_uri": {
       "type": "string",
@@ -82,7 +83,7 @@
       "description": "The URI for connecting to Neo4j",
       "default": "bolt://localhost:7687",
       "required": true,
-      "sensitive": true
+      "sensitive": false
     },
     "neo4j_namespace": {
       "type": "string",
@@ -113,6 +114,14 @@
       "title": "MCP Server Port",
       "description": "The port for the MCP server, if not using stdio. Defaults to 8000",
       "default": 8000,
+      "required": false,
+      "sensitive": false
+    },
+    "mcp_server_path": {
+      "type": "string",
+      "title": "MCP Server Path",
+      "description": "The path for the MCP server, if not using stdio. Defaults to /mcp/",
+      "default": "/mcp/",
       "required": false,
       "sensitive": false
     }

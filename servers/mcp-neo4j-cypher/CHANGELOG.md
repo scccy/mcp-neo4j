@@ -1,6 +1,14 @@
 ## Next
 
 ### Fixed
+
+### Changed
+
+### Added
+
+## v0.3.0
+
+### Fixed
 * Updated the `get_neo4j_schema` tool to include Relationship properties as well
 
 ### Changed
@@ -9,11 +17,9 @@
 * Update `get_neo4j_schema` tool to catch missing apoc plugin error explicitly and provide guidance to client and user
 * Update error handling for tools to explicitly catch and return Neo4j based errors with details
 
-
 ### Added
 * Add .dxt file for Cypher MCP server
 * Add .dxt file generation to Cypher MCP Publish GitHub action
-* Add error indicator to tool results in the `CallToolResult` object
 * Add HTTP transport option
 * Migrate to FastMCP v2.x
 * Add tool annotations
