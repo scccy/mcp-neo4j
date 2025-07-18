@@ -13,6 +13,7 @@
 * Add HTTP transport option
 * Migrate to FastMCP v2.x
 * Add tool annotations
+* Update Dockerfile for http configuration
 
 ## v0.2.4
 

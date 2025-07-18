@@ -27,10 +27,12 @@ async def neo4j_driver():
 @pytest_asyncio.fixture(scope="function")
 async def memory(neo4j_driver) -> Neo4jMemory:
     """Create a Neo4jMemory instance with the Neo4j driver."""
-    return Neo4jMemory(neo4j_driver)
+    mem = Neo4jMemory(neo4j_driver)
+    await mem.create_fulltext_index()
+    return mem
 
 @pytest.mark.asyncio
-async def test_create_and_read_entities(memory):
+async def test_create_and_read_entities(memory: Neo4jMemory):
     # Create test entities
     test_entities = [
         Entity(name="Alice", type="Person", observations=["Likes reading", "Works at Company X"]),
@@ -55,7 +57,7 @@ async def test_create_and_read_entities(memory):
     assert "Enjoys hiking" in entities_by_name["Bob"].observations
 
 @pytest.mark.asyncio
-async def test_create_and_read_relations(memory):
+async def test_create_and_read_relations(memory: Neo4jMemory):
     # Create test entities
     test_entities = [
         Entity(name="Alice", type="Person", observations=[]),
@@ -80,17 +82,17 @@ async def test_create_and_read_relations(memory):
     relation = graph.relations[0]
     assert relation.source == "Alice"
     assert relation.target == "Bob"
-    assert relation.relationType == "RELATION"
+    assert relation.relationType == "KNOWS"
 
 @pytest.mark.asyncio
-async def test_add_observations(memory):
+async def test_add_observations(memory: Neo4jMemory):
     # Create test entity
     test_entity = Entity(name="Charlie", type="Person", observations=["Initial observation"])
     await memory.create_entities([test_entity])
     
     # Add observations
     observation_additions = [
-        ObservationAddition(entityName="Charlie", contents=["New observation 1", "New observation 2"])
+        ObservationAddition(entityName="Charlie", observations=["New observation 1", "New observation 2"])
     ]
     
     result = await memory.add_observations(observation_additions)
@@ -109,7 +111,7 @@ async def test_add_observations(memory):
     assert "New observation 2" in charlie.observations
 
 @pytest.mark.asyncio
-async def test_delete_observations(memory):
+async def test_delete_observations(memory: Neo4jMemory):
     # Create test entity with observations
     test_entity = Entity(
         name="Dave", 
@@ -138,7 +140,7 @@ async def test_delete_observations(memory):
     assert "Observation 3" in dave.observations
 
 @pytest.mark.asyncio
-async def test_delete_entities(memory):
+async def test_delete_entities(memory: Neo4jMemory):
     # Create test entities
     test_entities = [
         Entity(name="Eve", type="Person", observations=[]),
@@ -158,7 +160,7 @@ async def test_delete_entities(memory):
     assert "Frank" in entity_names
 
 @pytest.mark.asyncio
-async def test_delete_relations(memory):
+async def test_delete_relations(memory: Neo4jMemory):
     # Create test entities
     test_entities = [
         Entity(name="Grace", type="Person", observations=[]),
@@ -184,10 +186,10 @@ async def test_delete_relations(memory):
     
     # Verify only the WORKS_WITH relation remains
     assert len(graph.relations) == 1
-    assert graph.relations[0].relationType == "RELATION"
+    assert graph.relations[0].relationType == "WORKS_WITH"
 
 @pytest.mark.asyncio
-async def test_search_nodes(memory):
+async def test_search_nodes(memory: Neo4jMemory):
     # Create test entities
     test_entities = [
         Entity(name="Ian", type="Person", observations=["Likes coffee"]),
@@ -197,7 +199,7 @@ async def test_search_nodes(memory):
     await memory.create_entities(test_entities)
     
     # Search for coffee-related nodes
-    result = await memory.search_nodes("coffee")
+    result = await memory.search_memories("coffee")
     
     # Verify search results
     entity_names = [e.name for e in result.entities]
@@ -206,7 +208,7 @@ async def test_search_nodes(memory):
     assert "Jane" not in entity_names
 
 @pytest.mark.asyncio
-async def test_find_nodes(memory):
+async def test_find_nodes(memory: Neo4jMemory):
     # Create test entities
     test_entities = [
         Entity(name="Kevin", type="Person", observations=[]),
@@ -214,10 +216,11 @@ async def test_find_nodes(memory):
         Entity(name="Mike", type="Person", observations=[])
     ]
     await memory.create_entities(test_entities)
-    
+
+
     # Open specific nodes
-    result = await memory.find_nodes(["Kevin", "Laura"])
-    
+    result = await memory.find_memories_by_name(["Kevin", "Laura"])
+
     # Verify only requested nodes are returned
     entity_names = [e.name for e in result.entities]
     assert "Kevin" in entity_names
