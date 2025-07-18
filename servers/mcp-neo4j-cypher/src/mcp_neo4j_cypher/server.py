@@ -6,6 +6,7 @@ from typing import Any, Literal, Optional
 from fastmcp.exceptions import ToolError
 from fastmcp.tools.tool import ToolResult, TextContent
 from fastmcp.server import FastMCP
+from mcp.types import ToolAnnotations
 from neo4j import (
     AsyncDriver,
     AsyncGraphDatabase,
@@ -51,7 +52,14 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
 
     namespace_prefix = _format_namespace(namespace)
 
-    @mcp.tool(name=namespace_prefix+"get_neo4j_schema")
+    @mcp.tool(name=namespace_prefix+"get_neo4j_schema", 
+              annotations=ToolAnnotations(title="Get Neo4j Schema", 
+                                          readOnlyHint=True,
+                                          destructiveHint=False,
+                                          idempotentHint=True,
+                                          openWorldHint=True
+                                          )
+            )
     async def get_neo4j_schema() -> list[ToolResult]:
         """List all node, their attributes and their relationships to other nodes in the neo4j database.
         If this fails with a message that includes "Neo.ClientError.Procedure.ProcedureNotFound"
@@ -143,7 +151,13 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
             logger.error(f"Database error retrieving schema: {e}")
             raise ToolError(f"Error: {e}")
 
-    @mcp.tool(name=namespace_prefix+"read_neo4j_cypher")
+    @mcp.tool(name=namespace_prefix+"read_neo4j_cypher", 
+              annotations=ToolAnnotations(title="Read Neo4j Cypher", 
+                                          readOnlyHint=True,
+                                          destructiveHint=False,
+                                          idempotentHint=True,
+                                          openWorldHint=True
+                                          ))
     async def read_neo4j_cypher(
         query: str = Field(..., description="The Cypher query to execute."),
         params: Optional[dict[str, Any]] = Field(
@@ -167,7 +181,13 @@ def create_mcp_server(neo4j_driver: AsyncDriver, database: str = "neo4j", namesp
             logger.error(f"Database error executing query: {e}\n{query}\n{params}")
             raise ToolError(f"Error: {e}\n{query}\n{params}")
 
-    @mcp.tool(name=namespace_prefix+"write_neo4j_cypher")
+    @mcp.tool(name=namespace_prefix+"write_neo4j_cypher", 
+              annotations=ToolAnnotations(title="Write Neo4j Cypher", 
+                                          readOnlyHint=False,
+                                          destructiveHint=True,
+                                          idempotentHint=False,
+                                          openWorldHint=True
+                                          ))
     async def write_neo4j_cypher(
         query: str = Field(..., description="The Cypher query to execute."),
         params: Optional[dict[str, Any]] = Field(

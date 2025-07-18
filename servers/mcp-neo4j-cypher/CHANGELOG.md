@@ -12,6 +12,7 @@
 * Add error indicator to tool results in the `CallToolResult` object
 * Add HTTP transport option
 * Migrate to FastMCP v2.x
+* Add tool annotations
 
 ## v0.2.4
 
