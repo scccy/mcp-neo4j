@@ -18,12 +18,12 @@ The MCP server leverages Neo4j's graph database capabilities to create an interc
 ### 🔍 Usage Example
 
 ```
-Let's add some memories 
-I, Michael, living in Dresden, Germany work at Neo4j which is headquartered in Sweden with my colleagues Andreas (Cambridge, UK) and Oskar (Gothenburg, Sweden)
-I work in Product Management, Oskar in Engineering and Andreas in Developer Relations.
+Let's create some entities with constraints
+Create a "用户管理" (User Management) entity with operation type "CRUD", node type "功能模块", point 5, 
+and constraints: 必须 have "用户认证" and "权限验证", 禁止 have "超级管理员权限" for regular users.
 ```
 
-Results in Claude calling the create_entities and create_relations tools.
+Results in Claude calling the create_entities and create_relations tools with the new constraint-based structure.
 
 ![](./docs/images/employee_create_entities_and_relations.png)
 
@@ -41,13 +41,13 @@ The server offers these core tools:
    - No input required
    - Returns: Complete graph with entities and relations
 
-- `search_nodes`
+- `search_memories`
    - Search for nodes based on a query
    - Input:
-     - `query` (string): Search query matching names, types, observations
+     - `query` (string): Search query matching names, operation types, node types, descriptions
    - Returns: Matching subgraph
 
-- `find_nodes`
+- `find_memories_by_name`
    - Find specific nodes by name
    - Input:
      - `names` (array of strings): Entity names to retrieve
@@ -59,8 +59,13 @@ The server offers these core tools:
    - Input:
      - `entities`: Array of objects with:
        - `name` (string): Name of the entity
-       - `type` (string): Type of the entity  
-       - `observations` (array of strings): Initial observations about the entity
+       - `operation_type` (string): Operation type of the entity
+       - `node_type` (string): Node type of the entity
+       - `point` (int): Level/point of the entity
+       - `description` (string): Chinese description of the entity name
+       - `node_description` (string): Chinese description of the node type
+       - `constraint` (object): Constraint conditions with "必须" (required) and "禁止" (forbidden) arrays
+       - `label` (array of strings): Labels for the entity
    - Returns: Created entities
 
 - `delete_entities` 
@@ -77,6 +82,7 @@ The server offers these core tools:
        - `source` (string): Name of source entity
        - `target` (string): Name of target entity
        - `relationType` (string): Type of relation
+       - `description` (string): Description of the relation
    - Returns: Created relations
 
 - `delete_relations`
@@ -85,21 +91,21 @@ The server offers these core tools:
      - `relations`: Array of objects with same schema as create_relations
    - Returns: Success confirmation
 
-#### 📝 Observation Management Tools
-- `add_observations`
-   - Add new observations to existing entities
+#### 📝 Constraint Management Tools
+- `add_constraints`
+   - Add new constraints to existing entities
    - Input:
-     - `observations`: Array of objects with:
-       - `entityName` (string): Entity to add to
-       - `contents` (array of strings): Observations to add
-   - Returns: Added observation details
+     - `constraints`: Array of objects with:
+       - `entityName` (string): Entity to add constraints to
+       - `constraint` (object): Constraint conditions with "必须" (required) and "禁止" (forbidden) arrays
+   - Returns: Added constraint details
 
-- `delete_observations`
-   - Delete specific observations from entities
+- `delete_constraints`
+   - Delete specific constraints from entities
    - Input:
      - `deletions`: Array of objects with:
-       - `entityName` (string): Entity to delete from
-       - `observations` (array of strings): Observations to remove
+       - `entityName` (string): Entity to delete constraints from
+       - `constraint` (object): Constraint conditions to remove
    - Returns: Success confirmation
 
 ## 🔧 Usage with Claude Desktop
