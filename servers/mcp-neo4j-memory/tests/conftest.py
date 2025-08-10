@@ -14,7 +14,7 @@ sys.path.insert(0, str(project_root))
 # 设置环境变量
 os.environ.setdefault("NEO4J_URI", "neo4j://localhost:7687")
 os.environ.setdefault("NEO4J_USER", "neo4j")
-os.environ.setdefault("NEO4J_PASSWORD", "asdsc88Q12")
+os.environ.setdefault("NEO4J_PASSWORD", "password")  # 请修改为你的实际密码
 os.environ.setdefault("NEO4J_DATABASE", "neo4j")
 
 import pytest

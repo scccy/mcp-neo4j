@@ -82,13 +82,25 @@ uv run python -m pytest tests/integration/ -v
 
 ### 环境变量设置
 
-创建 `.env` 文件或设置环境变量：
+#### 方法1：使用环境变量文件（推荐）
+
+项目提供了 `test.env.example` 文件作为模板：
+
+```bash
+# 复制示例文件
+cp test.env.example test.env
+
+# 编辑 test.env 文件，填入你的实际配置
+nano test.env  # 或使用你喜欢的编辑器
+```
+
+#### 方法2：直接设置环境变量
 
 ```bash
 # Neo4j 连接配置
 export NEO4J_URL="bolt://localhost:7687"
 export NEO4J_USERNAME="neo4j"
-export NEO4J_PASSWORD="password"
+export NEO4J_PASSWORD="your_actual_password"  # 请修改为实际密码
 export NEO4J_DATABASE="neo4j"
 
 # MCP 服务器配置
@@ -97,6 +109,11 @@ export NEO4J_MCP_SERVER_HOST="127.0.0.1"
 export NEO4J_MCP_SERVER_PORT="8000"
 export NEO4J_MCP_SERVER_PATH="/mcp/"
 ```
+
+**⚠️ 安全提醒：**
+- 不要将包含真实密码的配置文件提交到 Git
+- `test.env` 文件已被添加到 `.gitignore`
+- 使用 `test.env.example` 作为配置模板
 
 ### 本地 Neo4j 数据库
 

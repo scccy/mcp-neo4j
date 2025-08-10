@@ -8,9 +8,10 @@ import os
 from neo4j import AsyncGraphDatabase
 
 # 设置环境变量
-os.environ["NEO4J_URI"] = "neo4j://localhost:7687"
-os.environ["NEO4J_USER"] = "neo4j"
-os.environ["NEO4J_PASSWORD"] = "asdsc88Q12"
+# 数据库连接配置 - 请根据你的实际环境修改
+os.environ["NEO4J_URL"] = "neo4j://localhost:7687"  # 或者使用 NEO4J_URI
+os.environ["NEO4J_USERNAME"] = "neo4j"  # 或者使用 NEO4J_USER
+os.environ["NEO4J_PASSWORD"] = "password"  # 请修改为你的实际密码
 os.environ["NEO4J_DATABASE"] = "neo4j"
 
 async def clear_database():

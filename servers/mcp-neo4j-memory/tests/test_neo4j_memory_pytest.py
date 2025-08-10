@@ -20,7 +20,7 @@ from src.mcp_neo4j_memory.neo4j_memory import (
 # 设置环境变量
 os.environ["NEO4J_URI"] = "neo4j://localhost:7687"
 os.environ["NEO4J_USER"] = "neo4j"
-os.environ["NEO4J_PASSWORD"] = "asdsc88Q12"
+os.environ["NEO4J_PASSWORD"] = "password"  # 请修改为你的实际密码
 os.environ["NEO4J_DATABASE"] = "neo4j"
 
 
