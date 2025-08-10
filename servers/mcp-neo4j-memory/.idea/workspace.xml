@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="95cf74e5-c0aa-4024-bed7-a4bd250b2af3" name="更改" comment="">
+      <change beforePath="$PROJECT_DIR$/src/mcp_neo4j_memory/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mcp_neo4j_memory/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mcp_neo4j_memory/neo4j_memory.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mcp_neo4j_memory/neo4j_memory.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mcp_neo4j_memory/server.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mcp_neo4j_memory/server.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/integration/conftest.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/integration/test_http_transport_IT.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/integration/test_neo4j_memory_IT.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/integration/test_sse_transport_IT.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/integration/test_stdio_transport_IT.py" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "scccy"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/neo4j-contrib/mcp-neo4j.git",
+    "accountId": "81eac804-988c-4bdb-98e7-f39e5cbcd152"
+  }
+}]]></component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 1
+}]]></component>
+  <component name="ProjectId" id="3167rJ0hqF9w2n4K84ypRLEO2cg" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python 测试.pytest (test_neo4j_memory_comprehensive.py 内).executor": "Run",
+    "Python 测试.pytest (test_neo4j_memory_pytest.py 内).executor": "Run",
+    "Python 测试.pytest (test_server_pytest.py 内).executor": "Run",
+    "Python 测试.pytest (test_verify_extension_relation.py 内).executor": "Run",
+    "Python 测试.test_create_entities.test_create_entities 的 pytest.executor": "Profiler",
+    "Python 测试.test_extension_relation.test_extension_relation 的 pytest.executor": "Run",
+    "Python 测试.test_neo4j_memory_pytest.TestNeo4jMemory 的 pytest.executor": "Run",
+    "Python 测试.test_neo4j_memory_pytest.TestNeo4jMemory.test_create_entities 的 pytest.executor": "Run",
+    "Python 测试.test_neo4j_memory_pytest.TestNeo4jMemory.test_create_entities_duplicate_name_node_type 的 pytest.executor": "Run",
+    "Python 测试.test_server.TestMCPServer 的 pytest.executor": "Run",
+    "Python 测试.test_server_pytest.TestMCPServer 的 pytest.executor": "Run",
+    "Python 测试.test_server_pytest.test_constraints 的 pytest.executor": "ConcurrencyExecutor",
+    "Python 测试.test_server_pytest.test_entities 的 pytest.executor": "Run",
+    "Python 测试.test_server_pytest.test_relations 的 pytest.executor": "Run",
+    "Python 测试.test_verify_extension_relation.test_extension_relation_creation 的 pytest.executor": "Run",
+    "Python.clear_database.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/Volumes/opt/curosr_mcp/mcp-neo4j/servers/mcp-neo4j-memory",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager" selected="Python 测试.test_verify_extension_relation.test_extension_relation_creation 的 pytest">
+    <configuration name="clear_database" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="mcp-neo4j-memory" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/clear_database.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest (test_verify_extension_relation.py 内)" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="mcp-neo4j-memory" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/test_verify_extension_relation.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="test_extension_relation.test_extension_relation 的 pytest" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="mcp-neo4j-memory" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_extension_relation.test_extension_relation&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="test_neo4j_memory_pytest.TestNeo4jMemory.test_create_entities_duplicate_name_node_type 的 pytest" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="mcp-neo4j-memory" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_neo4j_memory_pytest.TestNeo4jMemory.test_create_entities_duplicate_name_node_type&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="test_verify_extension_relation.test_extension_relation_creation 的 pytest" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="mcp-neo4j-memory" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_verify_extension_relation.test_extension_relation_creation&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python 测试.test_verify_extension_relation.test_extension_relation_creation 的 pytest" />
+        <item itemvalue="Python 测试.pytest (test_verify_extension_relation.py 内)" />
+        <item itemvalue="Python 测试.test_extension_relation.test_extension_relation 的 pytest" />
+        <item itemvalue="Python 测试.test_neo4j_memory_pytest.TestNeo4jMemory.test_create_entities_duplicate_name_node_type 的 pytest" />
+        <item itemvalue="Python.clear_database" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-deb605915726-JavaScript-PY-243.22562.220" />
+        <option value="bundled-python-sdk-0fc6c617c4bd-9a18a617cbe4-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.22562.220" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="95cf74e5-c0aa-4024-bed7-a4bd250b2af3" name="更改" comment="" />
+      <created>1754832865824</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1754832865824</updated>
+      <workItem from="1754832866888" duration="11313000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/tests/test_neo4j_memory_pytest.py</url>
+          <line>135</line>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/tests/test_neo4j_memory_pytest.py</url>
+          <line>480</line>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$test_neo4j_memory_pytest_TestNeo4jMemory__pytest.coverage" NAME="test_neo4j_memory_pytest.TestNeo4jMemory 的 pytest 覆盖结果" MODIFIED="1754843115417" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$test_server_TestMCPServer__pytest.coverage" NAME="test_server.TestMCPServer 的 pytest 覆盖结果" MODIFIED="1754844168355" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$test_server_pytest_TestMCPServer__pytest.coverage" NAME="test_server_pytest.TestMCPServer 的 pytest 覆盖结果" MODIFIED="1754844707397" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$test_neo4j_memory_pytest_TestNeo4jMemory_test_create_entities_duplicate_name_node_type__pytest.coverage" NAME="test_neo4j_memory_pytest.TestNeo4jMemory.test_create_entities_duplicate_name_node_type 的 pytest 覆盖结果" MODIFIED="1754847176898" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$test_neo4j_memory_pytest_TestNeo4jMemory_test_create_entities__pytest.coverage" NAME="test_neo4j_memory_pytest.TestNeo4jMemory.test_create_entities 的 pytest 覆盖结果" MODIFIED="1754843131380" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$test_extension_relation_test_extension_relation__pytest.coverage" NAME="test_extension_relation.test_extension_relation 的 pytest 覆盖结果" MODIFIED="1754847381810" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$test_verify_extension_relation_test_extension_relation_creation__pytest.coverage" NAME="test_verify_extension_relation.test_extension_relation_creation 的 pytest 覆盖结果" MODIFIED="1754847597636" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$test_create_entities_test_create_entities__pytest.coverage" NAME="test_create_entities.test_create_entities 的 pytest 覆盖结果" MODIFIED="1754837581262" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$test_server_pytest_test_constraints__pytest.coverage" NAME="test_server_pytest.test_constraints 的 pytest 覆盖结果" MODIFIED="1754844514028" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$test_server_pytest_test_entities__pytest.coverage" NAME="test_server_pytest.test_entities 的 pytest 覆盖结果" MODIFIED="1754844690066" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$pytest__test_neo4j_memory_pytest_py__.coverage" NAME="pytest (test_neo4j_memory_pytest.py 内) 覆盖结果" MODIFIED="1754846887860" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$pytest__test_neo4j_memory_comprehensive_py__.coverage" NAME="pytest (test_neo4j_memory_comprehensive.py 内) 覆盖结果" MODIFIED="1754842256275" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$test_server_pytest_test_relations__pytest.coverage" NAME="test_server_pytest.test_relations 的 pytest 覆盖结果" MODIFIED="1754844701406" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$clear_database.coverage" NAME="clear_database 覆盖结果" MODIFIED="1754846981275" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$pytest__test_verify_extension_relation_py__.coverage" NAME="pytest (test_verify_extension_relation.py 内) 覆盖结果" MODIFIED="1754847488073" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/mcp_neo4j_memory$pytest__test_server_pytest_py__.coverage" NAME="pytest (test_server_pytest.py 内) 覆盖结果" MODIFIED="1754845080521" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+  </component>
+</project>

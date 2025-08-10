@@ -15,7 +15,7 @@ def main():
     parser.add_argument("--server-host", default=None, help="HTTP host (default: 127.0.0.1)")
     parser.add_argument("--server-port", type=int, default=None, help="HTTP port (default: 8000)")
     parser.add_argument("--server-path", default=None, help="HTTP path (default: /mcp/)")
-    
+
     args = parser.parse_args()
     asyncio.run(server.main(
         args.db_url or os.getenv("NEO4J_URL") or os.getenv("NEO4J_URI", "bolt://localhost:7687"),

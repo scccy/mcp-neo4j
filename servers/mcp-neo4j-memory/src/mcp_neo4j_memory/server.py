@@ -11,7 +11,7 @@ from fastmcp.tools.tool import ToolResult, TextContent
 from neo4j.exceptions import Neo4jError
 from mcp.types import ToolAnnotations
 
-from .neo4j_memory import Neo4jMemory, Entity, Relation, ObservationAddition, ObservationDeletion, KnowledgeGraph
+from .neo4j_memory import Neo4jMemory, Entity, Relation, ConstraintAddition, ConstraintDeletion, KnowledgeGraph
 
 # Set up logging
 logger = logging.getLogger('mcp_neo4j_memory')
@@ -20,13 +20,13 @@ logger.setLevel(logging.INFO)
 
 def create_mcp_server(memory: Neo4jMemory) -> FastMCP:
     """Create an MCP server instance for memory management."""
-    
-    mcp: FastMCP = FastMCP("mcp-neo4j-memory", dependencies=["neo4j", "pydantic"], stateless_http=True)
 
-    @mcp.tool(annotations=ToolAnnotations(title="Read Graph", 
-                                          readOnlyHint=True, 
-                                          destructiveHint=False, 
-                                          idempotentHint=True, 
+    mcp: FastMCP = FastMCP("mcp-neo4j-memory", dependencies=["neo4j", "pydantic"])
+
+    @mcp.tool(annotations=ToolAnnotations(title="Read Graph",
+                                          readOnlyHint=True,
+                                          destructiveHint=False,
+                                          idempotentHint=True,
                                           openWorldHint=True))
     async def read_graph() -> KnowledgeGraph:
         """Read the entire knowledge graph."""
@@ -42,12 +42,13 @@ def create_mcp_server(memory: Neo4jMemory) -> FastMCP:
             logger.error(f"Error reading full knowledge graph: {e}")
             raise ToolError(f"Error reading full knowledge graph: {e}")
 
-    @mcp.tool(annotations=ToolAnnotations(title="Create Entities", 
-                                          readOnlyHint=False, 
-                                          destructiveHint=False, 
-                                          idempotentHint=True, 
+    @mcp.tool(annotations=ToolAnnotations(title="Create Entities",
+                                          readOnlyHint=False,
+                                          destructiveHint=False,
+                                          idempotentHint=True,
                                           openWorldHint=True))
     async def create_entities(entities: list[Entity] = Field(..., description="List of entities to create")) -> list[Entity]:
+
         """Create multiple new entities in the knowledge graph."""
         logger.info(f"MCP tool: create_entities ({len(entities)} entities)")
         try:
@@ -62,10 +63,10 @@ def create_mcp_server(memory: Neo4jMemory) -> FastMCP:
             logger.error(f"Error creating entities: {e}")
             raise ToolError(f"Error creating entities: {e}")
 
-    @mcp.tool(annotations=ToolAnnotations(title="Create Relations", 
-                                          readOnlyHint=False, 
-                                          destructiveHint=False, 
-                                          idempotentHint=True, 
+    @mcp.tool(annotations=ToolAnnotations(title="Create Relations",
+                                          readOnlyHint=False,
+                                          destructiveHint=False,
+                                          idempotentHint=True,
                                           openWorldHint=True))
     async def create_relations(relations: list[Relation] = Field(..., description="List of relations to create")) -> list[Relation]:
         """Create multiple new relations between entities."""
@@ -82,30 +83,30 @@ def create_mcp_server(memory: Neo4jMemory) -> FastMCP:
             logger.error(f"Error creating relations: {e}")
             raise ToolError(f"Error creating relations: {e}")
 
-    @mcp.tool(annotations=ToolAnnotations(title="Add Observations", 
-                                          readOnlyHint=False, 
-                                          destructiveHint=False, 
-                                          idempotentHint=True, 
+    @mcp.tool(annotations=ToolAnnotations(title="Add Constraints",
+                                          readOnlyHint=False,
+                                          destructiveHint=False,
+                                          idempotentHint=True,
                                           openWorldHint=True))
-    async def add_observations(observations: list[ObservationAddition] = Field(..., description="List of observations to add")) -> list[dict[str, str | list[str]]]:
-        """Add new observations to existing entities."""
-        logger.info(f"MCP tool: add_observations ({len(observations)} additions)")
+    async def add_constraints(constraints: list[ConstraintAddition] = Field(..., description="List of constraints to add")) -> list[dict[str, str | list[str]]]:
+        """Add new constraints to existing entities."""
+        logger.info(f"MCP tool: add_constraints ({len(constraints)} additions)")
         try:
-            observation_objects = [ObservationAddition.model_validate(obs) for obs in observations]
-            result = await memory.add_observations(observation_objects)
+            constraint_objects = [ConstraintAddition.model_validate(obs) for obs in constraints]
+            result = await memory.add_constraint(constraint_objects)
             return ToolResult(content=[TextContent(type="text", text=json.dumps(result))],
                           structured_content={"result": result})
         except Neo4jError as e:
-            logger.error(f"Neo4j error adding observations: {e}")
-            raise ToolError(f"Neo4j error adding observations: {e}")
+            logger.error(f"Neo4j error adding constraints: {e}")
+            raise ToolError(f"Neo4j error adding constraints: {e}")
         except Exception as e:
-            logger.error(f"Error adding observations: {e}")
-            raise ToolError(f"Error adding observations: {e}")
+            logger.error(f"Error adding constraints: {e}")
+            raise ToolError(f"Error adding constraints: {e}")
 
-    @mcp.tool(annotations=ToolAnnotations(title="Delete Entities", 
-                                          readOnlyHint=False, 
-                                          destructiveHint=True, 
-                                          idempotentHint=True, 
+    @mcp.tool(annotations=ToolAnnotations(title="Delete Entities",
+                                          readOnlyHint=False,
+                                          destructiveHint=True,
+                                          idempotentHint=True,
                                           openWorldHint=True))
     async def delete_entities(entityNames: list[str] = Field(..., description="List of entity names to delete")) -> str:
         """Delete multiple entities and their associated relations."""
@@ -121,31 +122,32 @@ def create_mcp_server(memory: Neo4jMemory) -> FastMCP:
             logger.error(f"Error deleting entities: {e}")
             raise ToolError(f"Error deleting entities: {e}")
 
-    @mcp.tool(annotations=ToolAnnotations(title="Delete Observations", 
-                                          readOnlyHint=False, 
-                                          destructiveHint=True, 
-                                          idempotentHint=True, 
+    @mcp.tool(annotations=ToolAnnotations(title="Delete Constraints",
+                                          readOnlyHint=False,
+                                          destructiveHint=True,
+                                          idempotentHint=True,
                                           openWorldHint=True))
-    async def delete_observations(deletions: list[ObservationDeletion] = Field(..., description="List of observations to delete")) -> str:
-        """Delete specific observations from entities."""
-        logger.info(f"MCP tool: delete_observations ({len(deletions)} deletions)")
-        try:    
-            deletion_objects = [ObservationDeletion.model_validate(deletion) for deletion in deletions]
-            await memory.delete_observations(deletion_objects)
-            return ToolResult(content=[TextContent(type="text", text="Observations deleted successfully")],
-                          structured_content={"result": "Observations deleted successfully"})
+    async def delete_constraints(deletions: list[ConstraintDeletion] = Field(..., description="List of constraints to delete")) -> str:
+        """Delete specific constraints from entities."""
+        logger.info(f"MCP tool: delete_constraints ({len(deletions)} deletions)")
+        try:
+            deletion_objects = [ConstraintDeletion.model_validate(deletion) for deletion in deletions]
+            await memory.delete_constraint(deletion_objects)
+            return ToolResult(content=[TextContent(type="text", text="Constraints deleted successfully")],
+                          structured_content={"result": "Constraints deleted successfully"})
         except Neo4jError as e:
-            logger.error(f"Neo4j error deleting observations: {e}")
-            raise ToolError(f"Neo4j error deleting observations: {e}")
+            logger.error(f"Neo4j error deleting constraints: {e}")
+            raise ToolError(f"Neo4j error deleting constraints: {e}")
         except Exception as e:
-            logger.error(f"Error deleting observations: {e}")
-            raise ToolError(f"Error deleting observations: {e}")
+            logger.error(f"Error deleting constraints: {e}")
+            raise ToolError(f"Error deleting constraints: {e}")
 
-    @mcp.tool(annotations=ToolAnnotations(title="Delete Relations", 
-                                          readOnlyHint=False, 
-                                          destructiveHint=True, 
-                                          idempotentHint=True, 
+    @mcp.tool(annotations=ToolAnnotations(title="Delete Relations",
+                                          readOnlyHint=False,
+                                          destructiveHint=True,
+                                          idempotentHint=True,
                                           openWorldHint=True))
+
     async def delete_relations(relations: list[Relation] = Field(..., description="List of relations to delete")) -> str:
         """Delete multiple relations from the graph."""
         logger.info(f"MCP tool: delete_relations ({len(relations)} relations)")
@@ -161,10 +163,10 @@ def create_mcp_server(memory: Neo4jMemory) -> FastMCP:
             logger.error(f"Error deleting relations: {e}")
             raise ToolError(f"Error deleting relations: {e}")
 
-    @mcp.tool(annotations=ToolAnnotations(title="Search Memories", 
-                                          readOnlyHint=True, 
-                                          destructiveHint=False, 
-                                          idempotentHint=True, 
+    @mcp.tool(annotations=ToolAnnotations(title="Search Memories",
+                                          readOnlyHint=True,
+                                          destructiveHint=False,
+                                          idempotentHint=True,
                                           openWorldHint=True))
     async def search_memories(query: str = Field(..., description="Search query for nodes")) -> KnowledgeGraph:
         """Search for memories based on a query containing search terms."""
@@ -179,11 +181,11 @@ def create_mcp_server(memory: Neo4jMemory) -> FastMCP:
         except Exception as e:
             logger.error(f"Error searching memories: {e}")
             raise ToolError(f"Error searching memories: {e}")
-        
-    @mcp.tool(annotations=ToolAnnotations(title="Find Memories by Name", 
-                                          readOnlyHint=True, 
-                                          destructiveHint=False, 
-                                          idempotentHint=True, 
+
+    @mcp.tool(annotations=ToolAnnotations(title="Find Memories by Name",
+                                          readOnlyHint=True,
+                                          destructiveHint=False,
+                                          idempotentHint=True,
                                           openWorldHint=True))
     async def find_memories_by_name(names: list[str] = Field(..., description="List of node names to find")) -> KnowledgeGraph:
         """Find specific memories by name."""
@@ -203,9 +205,9 @@ def create_mcp_server(memory: Neo4jMemory) -> FastMCP:
 
 
 async def main(
-    neo4j_uri: str, 
-    neo4j_user: str, 
-    neo4j_password: str, 
+    neo4j_uri: str,
+    neo4j_user: str,
+    neo4j_password: str,
     neo4j_database: str,
     transport: Literal["stdio", "sse", "http"] = "stdio",
     host: str = "127.0.0.1",
@@ -218,10 +220,10 @@ async def main(
     # Connect to Neo4j
     neo4j_driver = AsyncGraphDatabase.driver(
         neo4j_uri,
-        auth=(neo4j_user, neo4j_password), 
+        auth=(neo4j_user, neo4j_password),
         database=neo4j_database
     )
-    
+
     # Verify connection
     try:
         await neo4j_driver.verify_connectivity()
@@ -233,10 +235,10 @@ async def main(
     # Initialize memory
     memory = Neo4jMemory(neo4j_driver)
     logger.info("Neo4jMemory initialized")
-    
+
     # Create fulltext index
     await memory.create_fulltext_index()
-    
+
     # Create MCP server
     mcp = create_mcp_server(memory)
     logger.info("MCP server created")
